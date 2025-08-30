@@ -59,7 +59,7 @@ export class AuthController {
     }
   }
 
-  async logout(req: Request, res: Response): Promise<void> {
+  async logout(_req: Request, res: Response): Promise<void> {
     try {
       // For JWT tokens, we don't need to do anything server-side
       // The client should remove the token

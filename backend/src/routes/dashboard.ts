@@ -13,4 +13,7 @@ router.get('/', authenticateToken, dashboardController.getDashboardData.bind(das
 // POST /api/dashboard/feedback
 router.post('/feedback', authenticateToken, validateBody(FeedbackSchema), dashboardController.submitFeedback.bind(dashboardController));
 
+// GET /api/dashboard/test-coingecko (for testing API connection)
+router.get('/test-coingecko', authenticateToken, dashboardController.testCoinGecko.bind(dashboardController));
+
 export default router;

@@ -1,6 +1,6 @@
 import { prisma } from '../config/database';
 import { OnboardingData, UserPreferences } from '@crypto-dashboard/shared';
-import { createError } from '../middleware/errorHandler';
+
 import logger from '../config/logger';
 
 export class OnboardingService {

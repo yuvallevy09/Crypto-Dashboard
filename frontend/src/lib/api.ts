@@ -100,6 +100,11 @@ export const dashboardAPI = {
   submitFeedback: async (data: Feedback): Promise<void> => {
     await api.post('/api/dashboard/feedback', data);
   },
+
+  testCoinGecko: async (): Promise<any> => {
+    const response = await api.get('/api/dashboard/test-coingecko');
+    return response.data.data;
+  },
 };
 
 export default api;

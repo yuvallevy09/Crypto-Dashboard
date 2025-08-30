@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { OnboardingService } from '../services/onboardingService';
 import { AuthenticatedRequest } from '../middleware/auth';
 import logger from '../config/logger';

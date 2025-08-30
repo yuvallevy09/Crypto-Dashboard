@@ -1,6 +1,7 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { DashboardService } from '../services/dashboardService';
 import { AuthenticatedRequest } from '../middleware/auth';
+import { coinGeckoService } from '../services/coinGeckoService';
 import logger from '../config/logger';
 
 const dashboardService = new DashboardService();
@@ -45,6 +46,34 @@ export class DashboardController {
       logger.error('Submit feedback controller error:', error);
       res.status(error.statusCode || 500).json({
         error: error.message || 'Failed to submit feedback',
+      });
+    }
+  }
+
+  async testCoinGecko(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'User not authenticated' });
+        return;
+      }
+
+      // Test CoinGecko API connection
+      const isAlive = await coinGeckoService.ping();
+      const topCoins = await coinGeckoService.getTopCoins(5);
+      const globalData = await coinGeckoService.getGlobalData();
+      
+      res.status(200).json({
+        message: 'CoinGecko API test successful',
+        data: {
+          isAlive,
+          topCoins,
+          globalData,
+        },
+      });
+    } catch (error: any) {
+      logger.error('CoinGecko test controller error:', error);
+      res.status(error.statusCode || 500).json({
+        error: error.message || 'CoinGecko API test failed',
       });
     }
   }
