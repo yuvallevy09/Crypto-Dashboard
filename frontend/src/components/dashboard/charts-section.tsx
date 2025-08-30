@@ -112,6 +112,17 @@ export function ChartsSection({ coins = [] }: ChartsSectionProps) {
   const transformedChartData = transformChartData(chartData, timePeriod);
   const selectedCoinData = coins.find(coin => coin.id === selectedCoin);
 
+  // Calculate line color based on price change
+  const getLineColor = () => {
+    if (!transformedChartData.length || !selectedCoinData) return '#3b82f6'; // Default blue
+    
+    const firstPrice = transformedChartData[0].price;
+    const lastPrice = transformedChartData[transformedChartData.length - 1].price;
+    const priceChange = lastPrice - firstPrice;
+    
+    return priceChange >= 0 ? '#10b981' : '#ef4444'; // Green for increase, red for decrease
+  };
+
   // Calculate dynamic Y-axis domain based on data range
   const getYAxisDomain = () => {
     if (transformedChartData.length === 0) return [0, 100];
@@ -283,10 +294,10 @@ export function ChartsSection({ coins = [] }: ChartsSectionProps) {
                     <Line 
                       type="monotone" 
                       dataKey="price" 
-                      stroke="#3b82f6" 
+                      stroke={getLineColor()} 
                       strokeWidth={2}
                       dot={false}
-                      activeDot={{ r: 4, fill: '#3b82f6' }}
+                      activeDot={{ r: 4, fill: getLineColor() }}
                     />
                   </LineChart>
                 </ResponsiveContainer>

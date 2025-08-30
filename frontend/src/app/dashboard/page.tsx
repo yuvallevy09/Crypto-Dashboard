@@ -13,23 +13,32 @@ import { MemeSection } from '@/components/dashboard/meme-section';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, token, isHydrated } = useAuthStore();
 
   const { data: dashboardData, isLoading, error } = useQuery({
     queryKey: ['dashboard'],
     queryFn: dashboardAPI.getData,
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && !!token && isHydrated,
     refetchInterval: 120000, // Refetch every 2 minutes instead of 30 seconds
   });
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    // Wait for hydration to complete before checking authentication
+    if (isHydrated && !isAuthenticated && !token) {
       router.push('/login');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, token, isHydrated, router]);
 
-  if (!isAuthenticated) {
-    return null;
+  // Show loading while checking authentication
+  if (!isHydrated || (!isAuthenticated && !token)) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
   }
 
   if (isLoading) {

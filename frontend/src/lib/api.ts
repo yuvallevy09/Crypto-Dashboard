@@ -9,6 +9,7 @@ import {
   User,
   UserPreferences
 } from '@crypto-dashboard/shared';
+import { useAuthStore } from './auth-store';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
@@ -23,7 +24,8 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('auth_token');
+    // Get token from Zustand store instead of localStorage
+    const token = useAuthStore.getState().token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -39,7 +41,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !error.config?.url?.includes('/login')) {
       // Clear token and redirect to login
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('auth_token');
+        useAuthStore.getState().logout();
         window.location.href = '/login';
       }
     }
@@ -61,9 +63,7 @@ export const authAPI = {
 
   logout: async (): Promise<void> => {
     await api.post('/api/auth/logout');
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('auth_token');
-    }
+    useAuthStore.getState().logout();
   },
 
   getProfile: async (): Promise<User> => {

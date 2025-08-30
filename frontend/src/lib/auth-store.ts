@@ -7,6 +7,7 @@ interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isHydrated: boolean;
 }
 
 interface AuthActions {
@@ -14,40 +15,43 @@ interface AuthActions {
   setToken: (token: string) => void;
   logout: () => void;
   setLoading: (loading: boolean) => void;
+  setHydrated: (hydrated: boolean) => void;
 }
 
 type AuthStore = AuthState & AuthActions;
 
 export const useAuthStore = create<AuthStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       token: null,
       isAuthenticated: false,
       isLoading: false,
+      isHydrated: false,
 
       setUser: (user) =>
         set({ user, isAuthenticated: true }),
 
       setToken: (token) => {
-        set({ token });
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('auth_token', token);
-        }
+        set({ token, isAuthenticated: true });
       },
 
       logout: () => {
         set({ user: null, token: null, isAuthenticated: false });
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('auth_token');
-        }
       },
 
       setLoading: (isLoading) => set({ isLoading }),
+
+      setHydrated: (isHydrated) => set({ isHydrated }),
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ user: state.user, token: state.token }),
+      partialize: (state) => ({ 
+        user: state.user, 
+        token: state.token, 
+        isAuthenticated: state.isAuthenticated,
+        isHydrated: state.isHydrated
+      }),
     }
   )
 );
