@@ -75,6 +75,7 @@ export interface NewsItem {
   publishedAt: Date | string;
   tags: string[];
   summary?: string;
+  dataSource?: 'cryptopanic' | 'fallback'; // Indicates if data is from API or fallback
 }
 
 export interface AIInsight {

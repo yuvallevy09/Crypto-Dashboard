@@ -16,6 +16,11 @@ router.post('/feedback', authenticateToken, validateBody(FeedbackSchema), dashbo
 // GET /api/dashboard/test-coingecko (for testing API connection)
 router.get('/test-coingecko', authenticateToken, dashboardController.testCoinGecko.bind(dashboardController));
 
+// GET /api/dashboard/test-cryptopanic (for testing CryptoPanic API connection)
+router.get('/test-cryptopanic', authenticateToken, dashboardController.testCryptoPanic.bind(dashboardController));
+
+
+
 // GET /api/dashboard/chart-data/:coinId
 router.get('/chart-data/:coinId', authenticateToken, dashboardController.getChartData.bind(dashboardController));
 

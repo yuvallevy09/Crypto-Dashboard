@@ -1,24 +1,26 @@
 import { prisma } from '../config/database';
 import { DashboardData, ContentType, FeedbackType } from '@crypto-dashboard/shared';
 import { coinGeckoService } from './coinGeckoService';
+import { cryptoPanicService } from './cryptoPanicService';
 import logger from '../config/logger';
 
 export class DashboardService {
   async getDashboardData(userId: string): Promise<DashboardData> {
     try {
-      // Get real data from CoinGecko API with fallback to mock data
-      let marketOverview, trendingCoins, topGainers, coinPrices;
+      // Get real data from APIs with fallback to mock data
+      let marketOverview, trendingCoins, topGainers, coinPrices, news;
 
       try {
-        [marketOverview, trendingCoins, topGainers, coinPrices] = await Promise.all([
+        [marketOverview, trendingCoins, topGainers, coinPrices, news] = await Promise.all([
           coinGeckoService.getGlobalData(),
           coinGeckoService.getTrendingCoins(),
           coinGeckoService.getTopGainers(3),
           coinGeckoService.getTopCoins(25), // Increased from 10 to 25 for more coin options
+          cryptoPanicService.getTrendingNews(10), // Get trending news from CryptoPanic
         ]);
       } catch (error) {
-        logger.warn('CoinGecko API failed, using fallback data:', error);
-        // Fallback to mock data if API fails
+        logger.warn('API calls failed, using fallback data:', error);
+        // Fallback to mock data if APIs fail
         marketOverview = {
           totalMarketCap: 3924450308279,
           totalVolume24h: 136604457007,
@@ -95,38 +97,14 @@ export class DashboardService {
             price_change_percentage_7d_in_currency: -5.2,
           },
         ];
+        news = cryptoPanicService.getFallbackNews();
       }
 
       const dashboardData: DashboardData = {
         marketOverview,
         trendingCoins,
         topGainers,
-        news: [
-          {
-            id: '1',
-            title: 'Hong Kong Firm Allocates HK$450M for Crypto Ventures',
-            url: 'https://example.com/news/1',
-            source: 'coincu.com',
-            publishedAt: new Date(),
-            tags: ['NYLA'],
-          },
-          {
-            id: '2',
-            title: 'Elon Musk\'s lawyer to chair $200M Dogecoin treasury: Report',
-            url: 'https://example.com/news/2',
-            source: 'theholycoins.com',
-            publishedAt: new Date(Date.now() - 600000), // 10 minutes ago
-            tags: ['DOGE', 'BTC'],
-          },
-          {
-            id: '3',
-            title: 'Shiba Inu Price Set For 650% Expansion To $0.00009 ATH If This Happens',
-            url: 'https://example.com/news/3',
-            source: 'cryptonews.com',
-            publishedAt: new Date(Date.now() - 1200000), // 20 minutes ago
-            tags: ['SHIB', 'ATH'],
-          },
-        ],
+        news,
         aiInsight: {
           id: '1',
           content: 'The crypto market is showing signs of consolidation after recent volatility. Bitcoin\'s dominance remains strong while altcoins are experiencing mixed performance. Keep an eye on regulatory developments as they continue to impact market sentiment.',

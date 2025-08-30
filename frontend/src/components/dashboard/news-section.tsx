@@ -56,6 +56,17 @@ export function NewsSection({ news }: NewsSectionProps) {
                   <span className="text-xs text-gray-500">{formatTimeAgo(item.publishedAt)}</span>
                   <span className="text-xs text-gray-400">•</span>
                   <span className="text-xs text-gray-500">{item.source}</span>
+                  {item.dataSource && (
+                    <>
+                      <span className="text-xs text-gray-400">•</span>
+                      <Badge 
+                        variant={item.dataSource === 'cryptopanic' ? 'default' : 'secondary'} 
+                        className="text-xs"
+                      >
+                        {item.dataSource === 'cryptopanic' ? 'Live' : 'Demo'}
+                      </Badge>
+                    </>
+                  )}
                 </div>
                 <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
                   {item.title}
