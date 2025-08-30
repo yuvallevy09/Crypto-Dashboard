@@ -1,0 +1,104 @@
+'use client';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ThumbsUp, ThumbsDown, ExternalLink } from 'lucide-react';
+import { NewsItem } from '@crypto-dashboard/shared';
+import { useMutation } from '@tanstack/react-query';
+import { dashboardAPI } from '@/lib/api';
+
+interface NewsSectionProps {
+  news: NewsItem[];
+}
+
+export function NewsSection({ news }: NewsSectionProps) {
+  const feedbackMutation = useMutation({
+    mutationFn: ({ contentId, rating }: { contentId: string; rating: 'THUMBS_UP' | 'THUMBS_DOWN' }) =>
+      dashboardAPI.submitFeedback({
+        contentType: 'NEWS',
+        contentId,
+        rating,
+      }),
+  });
+
+  const handleFeedback = (contentId: string, rating: 'THUMBS_UP' | 'THUMBS_DOWN') => {
+    feedbackMutation.mutate({ contentId, rating });
+  };
+
+  const formatTimeAgo = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    
+    if (!dateObj || isNaN(dateObj.getTime())) {
+      return 'Unknown';
+    }
+    
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - dateObj.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes}min`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h`;
+    return `${Math.floor(diffInMinutes / 1440)}d`;
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg font-semibold">Market News</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {news.map((item) => (
+          <div key={item.id} className="border-b border-gray-100 pb-4 last:border-b-0">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-2">
+                  <span className="text-xs text-gray-500">{formatTimeAgo(item.publishedAt)}</span>
+                  <span className="text-xs text-gray-400">•</span>
+                  <span className="text-xs text-gray-500">{item.source}</span>
+                </div>
+                <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
+                  {item.title}
+                </h3>
+                <div className="flex items-center space-x-2">
+                  {item.tags.map((tag) => (
+                    <Badge key={tag} variant="secondary" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              <div className="flex flex-col items-end space-y-2 ml-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => window.open(item.url, '_blank')}
+                >
+                  <ExternalLink className="h-3 w-3" />
+                </Button>
+                <div className="flex space-x-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleFeedback(item.id, 'THUMBS_UP')}
+                    disabled={feedbackMutation.isPending}
+                  >
+                    <ThumbsUp className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleFeedback(item.id, 'THUMBS_DOWN')}
+                    disabled={feedbackMutation.isPending}
+                  >
+                    <ThumbsDown className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}

@@ -1,0 +1,55 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  preferences UserPreferences?
+  feedback    Feedback[]
+
+  @@map("users")
+}
+
+model UserPreferences {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  cryptoInterests    String[] // Array of crypto IDs
+  investorType       String   // Enum: HODLER, DAY_TRADER, NFT_COLLECTOR, DEFI_USER, NEWBIE
+  contentPreferences String[] // Array of content preferences
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+model Feedback {
+  id          String   @id @default(cuid())
+  userId      String
+  contentType String   // Enum: NEWS, CHART, AI_INSIGHT, MEME
+  contentId   String
+  rating      String   // Enum: THUMBS_UP, THUMBS_DOWN
+  createdAt   DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("feedback")
+}
