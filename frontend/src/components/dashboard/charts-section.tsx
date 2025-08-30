@@ -41,7 +41,7 @@ export function ChartsSection({ coins = [] }: ChartsSectionProps) {
     retryDelay: 1000, // Wait 1 second between retries
   });
 
-  // Transform API data for chart with better labeling and data processing
+    // Transform API data for chart with better labeling and data processing
   const transformChartData = (rawData: any, period: TimePeriod) => {
     if (!rawData?.prices) return [];
 
@@ -50,82 +50,63 @@ export function ChartsSection({ coins = [] }: ChartsSectionProps) {
       price: Math.round(price * 100) / 100, // Keep 2 decimal places for better precision
     }));
 
-    // Remove duplicate labels by grouping data points
-    const groupedData: { [key: string]: { timestamp: number; price: number; count: number } } = {};
-    
-    prices.forEach(({ timestamp, price }) => {
-      const date = new Date(timestamp);
-      let timeKey = '';
-      
-      switch (period) {
-        case '24h':
-          // Round to nearest hour for 24h
-          const hour = Math.floor(date.getHours() / 1) * 1;
-          timeKey = `${date.getDate()}-${hour}`;
-          break;
-        case '7d':
-          // Group by day for 7d
-          timeKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-          break;
-        case '1m':
-          // Group by day for 1m
-          timeKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-          break;
-        case '3m':
-          // Group by 10-day intervals for 3m
-          const dayOfYear = Math.floor((date.getTime() - new Date(date.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
-          const interval = Math.floor(dayOfYear / 10) * 10;
-          timeKey = `${date.getFullYear()}-${interval}`;
-          break;
-        case '1y':
-          // Group by month for 1y
-          timeKey = `${date.getFullYear()}-${date.getMonth()}`;
-          break;
-      }
-
-      if (groupedData[timeKey]) {
-        groupedData[timeKey].price = (groupedData[timeKey].price + price) / 2; // Average price for the period
-        groupedData[timeKey].count++;
-      } else {
-        groupedData[timeKey] = { timestamp, price, count: 1 };
-      }
-    });
-
-    // Convert grouped data back to array and create labels
-    const sortedData = Object.values(groupedData)
-      .sort((a, b) => a.timestamp - b.timestamp)
-      .map(({ timestamp, price }) => {
+    // Create label mapping for each time period
+    const getLabelForTimestamp = (timestamp: number, period: TimePeriod) => {
       const date = new Date(timestamp);
       
-      let timeLabel = '';
       switch (period) {
         case '24h':
           // Round to nearest hour
           const hour = Math.floor(date.getHours() / 1) * 1;
-          timeLabel = `${hour.toString().padStart(2, '0')}:00`;
-          break;
+          return `${hour.toString().padStart(2, '0')}:00`;
         case '7d':
-          timeLabel = `${date.getDate()}. ${date.toLocaleDateString('en-US', { month: 'short' })}`;
-          break;
+          return `${date.getDate()}. ${date.toLocaleDateString('en-US', { month: 'short' })}`;
         case '1m':
-          timeLabel = `${date.getDate()}. ${date.toLocaleDateString('en-US', { month: 'short' })}`;
-          break;
+          return `${date.getDate()}. ${date.toLocaleDateString('en-US', { month: 'short' })}`;
         case '3m':
-          timeLabel = `${date.getDate()}. ${date.toLocaleDateString('en-US', { month: 'short' })}`;
-          break;
+          return `${date.getDate()}. ${date.toLocaleDateString('en-US', { month: 'short' })}`;
         case '1y':
-          timeLabel = `${date.toLocaleDateString('en-US', { month: 'short' })} '${date.getFullYear().toString().slice(-2)}`;
-          break;
+          return `${date.toLocaleDateString('en-US', { month: 'short' })} '${date.getFullYear().toString().slice(-2)}`;
+        default:
+          return date.toLocaleDateString();
       }
+    };
 
-              return {
-          time: timeLabel,
+    // Group data by labels to get unique labels
+    const labelGroups: { [label: string]: { timestamps: number[]; prices: number[] } } = {};
+    
+    prices.forEach(({ timestamp, price }) => {
+      const label = getLabelForTimestamp(timestamp, period);
+      
+      if (!labelGroups[label]) {
+        labelGroups[label] = { timestamps: [], prices: [] };
+      }
+      
+      labelGroups[label].timestamps.push(timestamp);
+      labelGroups[label].prices.push(price);
+    });
+
+    // Create the final data array with more granular points but same labels
+    const result: Array<{ time: string; price: number; timestamp: number }> = [];
+    
+    // For each label group, add multiple data points to make the curve more jagged
+    Object.entries(labelGroups).forEach(([label, { timestamps, prices }]) => {
+      // Sort timestamps and prices for this label
+      const sortedData = timestamps.map((ts, i) => ({ timestamp: ts, price: prices[i] }))
+        .sort((a, b) => a.timestamp - b.timestamp);
+      
+      // Add all data points for this label to make the curve more jagged
+      sortedData.forEach(({ timestamp, price }) => {
+        result.push({
+          time: label,
           price,
           timestamp,
-        };
+        });
       });
+    });
 
-    return sortedData;
+    // Sort by timestamp to maintain chronological order
+    return result.sort((a, b) => a.timestamp - b.timestamp);
   };
 
   const transformedChartData = transformChartData(chartData, timePeriod);

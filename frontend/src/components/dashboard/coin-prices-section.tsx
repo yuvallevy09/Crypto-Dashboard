@@ -36,7 +36,8 @@ export function CoinPricesSection({ coins }: CoinPricesSectionProps) {
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <div className="max-h-96 overflow-y-auto">
+            <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
                 <th className="text-left py-3 px-2 text-sm font-medium text-gray-500">Rank</th>
@@ -97,6 +98,7 @@ export function CoinPricesSection({ coins }: CoinPricesSectionProps) {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </CardContent>
     </Card>
