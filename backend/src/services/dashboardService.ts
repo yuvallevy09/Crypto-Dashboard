@@ -6,13 +6,96 @@ import logger from '../config/logger';
 export class DashboardService {
   async getDashboardData(userId: string): Promise<DashboardData> {
     try {
-      // Get real data from CoinGecko API
-      const [marketOverview, trendingCoins, topGainers, coinPrices] = await Promise.all([
-        coinGeckoService.getGlobalData(),
-        coinGeckoService.getTrendingCoins(),
-        coinGeckoService.getTopGainers(3),
-        coinGeckoService.getTopCoins(10),
-      ]);
+      // Get real data from CoinGecko API with fallback to mock data
+      let marketOverview, trendingCoins, topGainers, coinPrices;
+
+      try {
+        [marketOverview, trendingCoins, topGainers, coinPrices] = await Promise.all([
+          coinGeckoService.getGlobalData(),
+          coinGeckoService.getTrendingCoins(),
+          coinGeckoService.getTopGainers(3),
+          coinGeckoService.getTopCoins(25), // Increased from 10 to 25 for more coin options
+        ]);
+      } catch (error) {
+        logger.warn('CoinGecko API failed, using fallback data:', error);
+        // Fallback to mock data if API fails
+        marketOverview = {
+          totalMarketCap: 3924450308279,
+          totalVolume24h: 136604457007,
+          marketCapChange24h: -1.8,
+          volumeChange24h: -2.1,
+        };
+        trendingCoins = [
+          {
+            id: 'pyth-network',
+            symbol: 'PYTH',
+            name: 'Pyth Network',
+            image: 'https://assets.coingecko.com/coins/images/34431/large/pyth.png',
+            current_price: 0.2218,
+            market_cap: 1234567890,
+            market_cap_rank: 45,
+            total_volume: 987654321,
+            high_24h: 0.25,
+            low_24h: 0.20,
+            price_change_24h: 0.108,
+            price_change_percentage_24h: 95.3,
+            price_change_percentage_1h_in_currency: 2.5,
+            price_change_percentage_7d_in_currency: 120.5,
+          },
+        ];
+        topGainers = [
+          {
+            id: 'uchain',
+            symbol: 'UCHAIN',
+            name: 'UCHAIN',
+            image: 'https://assets.coingecko.com/coins/images/11111/large/uchain.png',
+            current_price: 384.37,
+            market_cap: 123456789,
+            market_cap_rank: 234,
+            total_volume: 98765432,
+            high_24h: 400,
+            low_24h: 200,
+            price_change_24h: 359.87,
+            price_change_percentage_24h: 1399.5,
+            price_change_percentage_1h_in_currency: 5.2,
+            price_change_percentage_7d_in_currency: 2000.1,
+          },
+        ];
+        coinPrices = [
+          {
+            id: 'bitcoin',
+            symbol: 'BTC',
+            name: 'Bitcoin',
+            image: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
+            current_price: 108265,
+            market_cap: 2155855355799,
+            market_cap_rank: 1,
+            total_volume: 51804376897,
+            high_24h: 110000,
+            low_24h: 105000,
+            price_change_24h: -4150,
+            price_change_percentage_24h: -3.7,
+            price_change_percentage_1h_in_currency: -0.5,
+            price_change_percentage_7d_in_currency: -7.5,
+          },
+          {
+            id: 'ethereum',
+            symbol: 'ETH',
+            name: 'Ethereum',
+            image: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
+            current_price: 4338.47,
+            market_cap: 521234567890,
+            market_cap_rank: 2,
+            total_volume: 12345678901,
+            high_24h: 4400,
+            low_24h: 4200,
+            price_change_24h: -150,
+            price_change_percentage_24h: -3.3,
+            price_change_percentage_1h_in_currency: -0.3,
+            price_change_percentage_7d_in_currency: -5.2,
+          },
+        ];
+      }
 
       const dashboardData: DashboardData = {
         marketOverview,

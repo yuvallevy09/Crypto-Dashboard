@@ -39,9 +39,40 @@ class RateLimiter {
   }
 }
 
+// Simple in-memory cache for API responses
+class APICache {
+  private cache = new Map<string, { data: any; timestamp: number; ttl: number }>();
+
+  set(key: string, data: any, ttl: number = 60000): void {
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now(),
+      ttl,
+    });
+  }
+
+  get(key: string): any | null {
+    const item = this.cache.get(key);
+    if (!item) return null;
+
+    const isExpired = Date.now() - item.timestamp > item.ttl;
+    if (isExpired) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    return item.data;
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+}
+
 export class CoinGeckoService {
   private config: CoinGeckoConfig;
   private rateLimiter: RateLimiter;
+  private cache: APICache;
   private axiosInstance: any;
 
   constructor() {
@@ -58,6 +89,8 @@ export class CoinGeckoService {
       this.config.rateLimit.callsPerMinute,
       this.config.rateLimit.windowMs
     );
+
+    this.cache = new APICache();
 
     this.axiosInstance = axios.create({
       baseURL: this.config.baseURL,
@@ -85,12 +118,29 @@ export class CoinGeckoService {
     );
   }
 
-  private async makeRequest(endpoint: string, params: Record<string, any> = {}): Promise<any> {
+  private async makeRequest(endpoint: string, params: Record<string, any> = {}, cacheKey?: string, cacheTTL: number = 60000): Promise<any> {
+    // Check cache first
+    if (cacheKey) {
+      const cachedData = this.cache.get(cacheKey);
+      if (cachedData) {
+        logger.info(`Cache hit for ${cacheKey}`);
+        return cachedData;
+      }
+    }
+
     await this.rateLimiter.checkLimit();
     
     try {
       const response = await this.axiosInstance.get(endpoint, { params });
-      return response.data;
+      const data = response.data;
+      
+      // Cache the response
+      if (cacheKey) {
+        this.cache.set(cacheKey, data, cacheTTL);
+        logger.info(`Cached response for ${cacheKey}`);
+      }
+      
+      return data;
     } catch (error: any) {
       logger.error('CoinGecko API request failed:', {
         endpoint,
@@ -103,6 +153,7 @@ export class CoinGeckoService {
 
   async getTopCoins(limit: number = 10, currency: string = 'usd'): Promise<CoinData[]> {
     try {
+      const cacheKey = `top_coins_${limit}_${currency}`;
       const data = await this.makeRequest('/coins/markets', {
         vs_currency: currency,
         order: 'market_cap_desc',
@@ -110,7 +161,7 @@ export class CoinGeckoService {
         page: 1,
         sparkline: true,
         price_change_percentage: '1h,24h,7d',
-      });
+      }, cacheKey, 30000); // Cache for 30 seconds
 
       return data.map((coin: any) => ({
         id: coin.id,
@@ -137,10 +188,12 @@ export class CoinGeckoService {
 
   async getTrendingCoins(): Promise<CoinData[]> {
     try {
-      const data = await this.makeRequest('/search/trending');
+      const trendingCacheKey = 'trending_coins';
+      const data = await this.makeRequest('/search/trending', {}, trendingCacheKey, 60000); // Cache for 1 minute
       
       // Get detailed data for trending coins
       const coinIds = data.coins.map((coin: any) => coin.item.id).join(',');
+      const detailedCacheKey = `trending_detailed_${coinIds}`;
       const detailedData = await this.makeRequest('/coins/markets', {
         ids: coinIds,
         vs_currency: 'usd',
@@ -149,7 +202,7 @@ export class CoinGeckoService {
         page: 1,
         sparkline: false,
         price_change_percentage: '1h,24h,7d',
-      });
+      }, detailedCacheKey, 30000); // Cache for 30 seconds
 
       return detailedData.map((coin: any) => ({
         id: coin.id,
@@ -175,6 +228,7 @@ export class CoinGeckoService {
 
   async getTopGainers(limit: number = 5): Promise<CoinData[]> {
     try {
+      const cacheKey = `top_gainers_${limit}`;
       const data = await this.makeRequest('/coins/markets', {
         vs_currency: 'usd',
         order: 'price_change_percentage_24h_desc',
@@ -182,7 +236,7 @@ export class CoinGeckoService {
         page: 1,
         sparkline: false,
         price_change_percentage: '1h,24h,7d',
-      });
+      }, cacheKey, 30000); // Cache for 30 seconds
 
       return data.map((coin: any) => ({
         id: coin.id,
@@ -213,7 +267,8 @@ export class CoinGeckoService {
     volumeChange24h: number;
   }> {
     try {
-      const data = await this.makeRequest('/global');
+      const cacheKey = 'global_data';
+      const data = await this.makeRequest('/global', {}, cacheKey, 60000); // Cache for 1 minute
       
       return {
         totalMarketCap: data.data.total_market_cap.usd,
@@ -267,10 +322,11 @@ export class CoinGeckoService {
     total_volumes: [number, number][];
   }> {
     try {
+      const cacheKey = `historical_${coinId}_${days}_${currency}`;
       const data = await this.makeRequest(`/coins/${coinId}/market_chart`, {
         vs_currency: currency,
         days: days.toString(),
-      });
+      }, cacheKey, 300000); // Cache for 5 minutes (historical data doesn't change as frequently)
 
       return {
         prices: data.prices,

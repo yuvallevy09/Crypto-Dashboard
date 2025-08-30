@@ -19,7 +19,7 @@ export default function DashboardPage() {
     queryKey: ['dashboard'],
     queryFn: dashboardAPI.getData,
     enabled: isAuthenticated,
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 120000, // Refetch every 2 minutes instead of 30 seconds
   });
 
   useEffect(() => {
