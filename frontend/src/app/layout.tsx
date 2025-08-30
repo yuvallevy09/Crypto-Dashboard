@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { AuthProvider } from "@/components/providers/auth-provider";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -20,12 +21,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <QueryProvider>
-          <AuthProvider>
-            {children}
-            <Toaster position="top-right" richColors />
-          </AuthProvider>
-        </QueryProvider>
+        <ErrorBoundary>
+          <QueryProvider>
+            <AuthProvider>
+              {children}
+              <Toaster position="top-right" richColors />
+            </AuthProvider>
+          </QueryProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

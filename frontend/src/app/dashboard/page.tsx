@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardAPI } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
+import { LoadingPage } from '@/components/ui/loading';
 import { DashboardHeader } from '@/components/dashboard/dashboard-header';
 import { AIInsightSection } from '@/components/dashboard/ai-insight-section';
 import { ChartsSection } from '@/components/dashboard/charts-section';
@@ -32,25 +33,11 @@ export default function DashboardPage() {
 
   // Show loading while checking authentication
   if (!isHydrated || (!isAuthenticated && !token)) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Checking authentication...</p>
-        </div>
-      </div>
-    );
+    return <LoadingPage />;
   }
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading your personalized dashboard...</p>
-        </div>
-      </div>
-    );
+    return <LoadingPage />;
   }
 
   if (error) {

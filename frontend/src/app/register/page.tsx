@@ -31,7 +31,6 @@ export default function RegisterPage() {
       router.push('/onboarding');
     },
     onError: (error: any) => {
-      console.error('Registration failed:', error);
       let errorMessage = 'Registration failed';
       
       if (error.response?.status === 400) {

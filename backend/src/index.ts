@@ -6,24 +6,26 @@ import dotenv from 'dotenv';
 import { prisma } from './config/database';
 import logger from './config/logger';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { env } from './config/env';
 
 // Import routes
 import authRoutes from './routes/auth';
 import onboardingRoutes from './routes/onboarding';
 import dashboardRoutes from './routes/dashboard';
+import healthRoutes from './routes/health';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = env.PORT;
 
 // Security middleware
 app.use(helmet());
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: env.CORS_ORIGIN,
   credentials: true,
   optionsSuccessStatus: 200,
 };
@@ -31,8 +33,8 @@ app.use(cors(corsOptions));
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'), // limit each IP to 100 requests per windowMs
+  windowMs: env.RATE_LIMIT_WINDOW_MS,
+  max: env.RATE_LIMIT_MAX_REQUESTS,
   message: {
     error: 'Too many requests from this IP, please try again later.',
   },
@@ -54,19 +56,11 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-  });
-});
-
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/', healthRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
@@ -101,7 +95,7 @@ const startServer = async () => {
 
     app.listen(PORT, () => {
       logger.info(`Server running on port ${PORT}`);
-      logger.info(`Environment: ${process.env.NODE_ENV}`);
+      logger.info(`Environment: ${env.NODE_ENV}`);
       logger.info(`Health check: http://localhost:${PORT}/health`);
     });
   } catch (error) {

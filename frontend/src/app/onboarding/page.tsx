@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { onboardingAPI } from '@/lib/api';
 import { OnboardingData, INVESTOR_TYPES, CONTENT_PREFERENCES, POPULAR_CRYPTOS, InvestorType } from '@crypto-dashboard/shared';
+import { toast } from 'sonner';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -24,8 +25,7 @@ export default function OnboardingPage() {
       router.push('/dashboard');
     },
     onError: (error: any) => {
-      console.error('Failed to save preferences:', error);
-      alert('Failed to save preferences. Please try again.');
+      toast.error('Failed to save preferences. Please try again.');
     },
   });
 
