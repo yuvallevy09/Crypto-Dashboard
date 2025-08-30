@@ -7,14 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { onboardingAPI } from '@/lib/api';
-import { OnboardingData, INVESTOR_TYPES, CONTENT_PREFERENCES, POPULAR_CRYPTOS } from '@crypto-dashboard/shared';
+import { OnboardingData, INVESTOR_TYPES, CONTENT_PREFERENCES, POPULAR_CRYPTOS, InvestorType } from '@crypto-dashboard/shared';
 
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<OnboardingData>({
     cryptoInterests: [],
-    investorType: 'NEWBIE',
+    investorType: InvestorType.NEWBIE,
     contentPreferences: [],
   });
 
@@ -39,7 +39,7 @@ export default function OnboardingPage() {
   };
 
   const handleInvestorTypeSelect = (type: string) => {
-    setFormData(prev => ({ ...prev, investorType: type as any }));
+    setFormData(prev => ({ ...prev, investorType: type as InvestorType }));
   };
 
   const handleContentPreferenceToggle = (preference: string) => {
@@ -70,7 +70,7 @@ export default function OnboardingPage() {
       case 1:
         return formData.cryptoInterests.length > 0;
       case 2:
-        return formData.investorType !== 'NEWBIE';
+        return formData.investorType !== InvestorType.NEWBIE;
       case 3:
         return formData.contentPreferences.length > 0;
       default:

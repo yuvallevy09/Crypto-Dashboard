@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ThumbsUp, ThumbsDown, RefreshCw, ExternalLink } from 'lucide-react';
-import { Meme } from '@crypto-dashboard/shared';
+import { Meme, ContentType, FeedbackType } from '@crypto-dashboard/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { dashboardAPI } from '@/lib/api';
 
@@ -17,15 +17,15 @@ export function MemeSection({ meme }: MemeSectionProps) {
   const queryClient = useQueryClient();
 
   const feedbackMutation = useMutation({
-    mutationFn: ({ contentId, rating }: { contentId: string; rating: 'THUMBS_UP' | 'THUMBS_DOWN' }) =>
+    mutationFn: ({ contentId, rating }: { contentId: string; rating: FeedbackType }) =>
       dashboardAPI.submitFeedback({
-        contentType: 'MEME',
+        contentType: ContentType.MEME,
         contentId,
         rating,
       }),
   });
 
-  const handleFeedback = (rating: 'THUMBS_UP' | 'THUMBS_DOWN') => {
+  const handleFeedback = (rating: FeedbackType) => {
     feedbackMutation.mutate({ contentId: meme.id, rating });
   };
 
@@ -78,7 +78,7 @@ export function MemeSection({ meme }: MemeSectionProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => handleFeedback('THUMBS_UP')}
+                onClick={() => handleFeedback(FeedbackType.THUMBS_UP)}
                 disabled={feedbackMutation.isPending}
               >
                 <ThumbsUp className="h-4 w-4" />
@@ -86,7 +86,7 @@ export function MemeSection({ meme }: MemeSectionProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => handleFeedback('THUMBS_DOWN')}
+                onClick={() => handleFeedback(FeedbackType.THUMBS_DOWN)}
                 disabled={feedbackMutation.isPending}
               >
                 <ThumbsDown className="h-4 w-4" />

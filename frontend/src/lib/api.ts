@@ -97,7 +97,7 @@ export const dashboardAPI = {
     return response.data.data;
   },
 
-  submitFeedback: async (data: Feedback): Promise<void> => {
+  submitFeedback: async (data: { contentType: string; contentId: string; rating: string }): Promise<void> => {
     await api.post('/api/dashboard/feedback', data);
   },
 

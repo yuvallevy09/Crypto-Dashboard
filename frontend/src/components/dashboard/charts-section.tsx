@@ -46,7 +46,7 @@ export function ChartsSection({ coins = [] }: ChartsSectionProps) {
     if (!rawData?.prices) return [];
 
     const prices = rawData.prices.map(([timestamp, price]: [number, number]) => ({
-      timestamp,
+      timestamp: timestamp as number,
       price: Math.round(price * 100) / 100, // Keep 2 decimal places for better precision
     }));
 
@@ -75,7 +75,7 @@ export function ChartsSection({ coins = [] }: ChartsSectionProps) {
     // Group data by labels to get unique labels
     const labelGroups: { [label: string]: { timestamps: number[]; prices: number[] } } = {};
     
-    prices.forEach(({ timestamp, price }) => {
+    prices.forEach(({ timestamp, price }: { timestamp: number; price: number }) => {
       const label = getLabelForTimestamp(timestamp, period);
       
       if (!labelGroups[label]) {
@@ -96,7 +96,7 @@ export function ChartsSection({ coins = [] }: ChartsSectionProps) {
         .sort((a, b) => a.timestamp - b.timestamp);
       
       // Add all data points for this label to make the curve more jagged
-      sortedData.forEach(({ timestamp, price }) => {
+      sortedData.forEach(({ timestamp, price }: { timestamp: number; price: number }) => {
         result.push({
           time: label,
           price,

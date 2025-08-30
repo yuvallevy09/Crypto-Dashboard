@@ -324,42 +324,42 @@ export class CryptoPanicService {
         tags: ['NYLA', 'HONG KONG', 'VENTURE CAPITAL'],
         dataSource: 'fallback', // Indicate this is fallback data
       },
-              {
-          id: 'fallback-2',
-          title: 'Elon Musk\'s lawyer to chair $200M Dogecoin treasury: Report',
-          url: 'https://theholycoins.com/news/elon-musk-lawyer-dogecoin-treasury/',
-          source: 'theholycoins.com',
-          publishedAt: new Date(Date.now() - 600000), // 10 minutes ago
-          tags: ['DOGE', 'BTC', 'ELON MUSK'],
-          dataSource: 'fallback',
-        },
-              {
-          id: 'fallback-3',
-          title: 'Shiba Inu Price Set For 650% Expansion To $0.00009 ATH If This Happens',
-          url: 'https://cryptonews.com/news/shiba-inu-price-prediction-650-expansion/',
-          source: 'cryptonews.com',
-          publishedAt: new Date(Date.now() - 1200000), // 20 minutes ago
-          tags: ['SHIB', 'ATH', 'PRICE PREDICTION'],
-          dataSource: 'fallback',
-        },
-              {
-          id: 'fallback-4',
-          title: 'Bitcoin ETF Inflows Continue as Institutional Adoption Grows',
-          url: 'https://cryptonews.com/news/bitcoin-etf-inflows-institutional-adoption/',
-          source: 'cryptonews.com',
-          publishedAt: new Date(Date.now() - 1800000), // 30 minutes ago
-          tags: ['BTC', 'ETF', 'INSTITUTIONAL'],
-          dataSource: 'fallback',
-        },
-              {
-          id: 'fallback-5',
-          title: 'Ethereum Layer 2 Solutions See Record Growth in TVL',
-          url: 'https://defipulse.com/news/ethereum-layer2-tvl-growth/',
-          source: 'defipulse.com',
-          publishedAt: new Date(Date.now() - 2400000), // 40 minutes ago
-          tags: ['ETH', 'LAYER2', 'DEFI', 'TVL'],
-          dataSource: 'fallback',
-        },
+      {
+        id: 'fallback-2',
+        title: 'Elon Musk\'s lawyer to chair $200M Dogecoin treasury: Report',
+        url: 'https://theholycoins.com/news/elon-musk-lawyer-dogecoin-treasury/',
+        source: 'theholycoins.com',
+        publishedAt: new Date(Date.now() - 600000), // 10 minutes ago
+        tags: ['DOGE', 'BTC', 'ELON MUSK'],
+        dataSource: 'fallback',
+      },
+      {
+        id: 'fallback-3',
+        title: 'Shiba Inu Price Set For 650% Expansion To $0.00009 ATH If This Happens',
+        url: 'https://cryptonews.com/news/shiba-inu-price-prediction-650-expansion/',
+        source: 'cryptonews.com',
+        publishedAt: new Date(Date.now() - 1200000), // 20 minutes ago
+        tags: ['SHIB', 'ATH', 'PRICE PREDICTION'],
+        dataSource: 'fallback',
+      },
+      {
+        id: 'fallback-4',
+        title: 'Bitcoin ETF Inflows Continue as Institutional Adoption Grows',
+        url: 'https://cryptonews.com/news/bitcoin-etf-inflows-institutional-adoption/',
+        source: 'cryptonews.com',
+        publishedAt: new Date(Date.now() - 1800000), // 30 minutes ago
+        tags: ['BTC', 'ETF', 'INSTITUTIONAL'],
+        dataSource: 'fallback',
+      },
+      {
+        id: 'fallback-5',
+        title: 'Ethereum Layer 2 Solutions See Record Growth in TVL',
+        url: 'https://defipulse.com/news/ethereum-layer2-tvl-growth/',
+        source: 'defipulse.com',
+        publishedAt: new Date(Date.now() - 2400000), // 40 minutes ago
+        tags: ['ETH', 'LAYER2', 'DEFI', 'TVL'],
+        dataSource: 'fallback',
+      },
     ];
   }
 

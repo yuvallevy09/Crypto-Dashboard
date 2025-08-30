@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ThumbsUp, ThumbsDown, ExternalLink } from 'lucide-react';
-import { NewsItem } from '@crypto-dashboard/shared';
+import { NewsItem, ContentType, FeedbackType } from '@crypto-dashboard/shared';
 import { useMutation } from '@tanstack/react-query';
 import { dashboardAPI } from '@/lib/api';
 
@@ -14,15 +14,15 @@ interface NewsSectionProps {
 
 export function NewsSection({ news }: NewsSectionProps) {
   const feedbackMutation = useMutation({
-    mutationFn: ({ contentId, rating }: { contentId: string; rating: 'THUMBS_UP' | 'THUMBS_DOWN' }) =>
+    mutationFn: ({ contentId, rating }: { contentId: string; rating: FeedbackType }) =>
       dashboardAPI.submitFeedback({
-        contentType: 'NEWS',
+        contentType: ContentType.NEWS,
         contentId,
         rating,
       }),
   });
 
-  const handleFeedback = (contentId: string, rating: 'THUMBS_UP' | 'THUMBS_DOWN') => {
+  const handleFeedback = (contentId: string, rating: FeedbackType) => {
     feedbackMutation.mutate({ contentId, rating });
   };
 
@@ -47,69 +47,77 @@ export function NewsSection({ news }: NewsSectionProps) {
       <CardHeader className="pb-3">
         <CardTitle className="text-lg font-semibold">Market News</CardTitle>
       </CardHeader>
-      <CardContent className="h-[calc(100%-4rem)] overflow-y-auto">
-        <div className="space-y-4">
-          {news.map((item) => (
-          <div key={item.id} className="border-b border-gray-100 pb-4 last:border-b-0">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-2">
-                  <span className="text-xs text-gray-500">{formatTimeAgo(item.publishedAt)}</span>
-                  <span className="text-xs text-gray-400">•</span>
-                  <span className="text-xs text-gray-500">{item.source}</span>
-                  {item.dataSource && (
-                    <>
+      <CardContent className="p-0">
+        <div className="h-80 overflow-y-auto">
+          <div className="p-4 space-y-3">
+            {news.map((item) => (
+              <div key={item.id} className="border-b border-gray-100 pb-3 last:border-b-0">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <span className="text-xs text-gray-500">{formatTimeAgo(item.publishedAt)}</span>
                       <span className="text-xs text-gray-400">•</span>
-                      <Badge 
-                        variant={item.dataSource === 'cryptopanic' ? 'default' : 'secondary'} 
-                        className="text-xs"
+                      <span className="text-xs text-gray-500 truncate">{item.source}</span>
+                      {item.dataSource && (
+                        <>
+                          <span className="text-xs text-gray-400">•</span>
+                          <Badge 
+                            variant={item.dataSource === 'cryptopanic' ? 'default' : 'secondary'} 
+                            className="text-xs"
+                          >
+                            {item.dataSource === 'cryptopanic' ? 'Live' : 'Demo'}
+                          </Badge>
+                        </>
+                      )}
+                    </div>
+                    <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2 leading-tight">
+                      {item.title}
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-1">
+                      {item.tags.slice(0, 3).map((tag) => (
+                        <Badge key={tag} variant="secondary" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                      {item.tags.length > 3 && (
+                        <span className="text-xs text-gray-400">+{item.tags.length - 3} more</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end space-y-1 ml-3 flex-shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => window.open(item.url, '_blank')}
+                      className="h-6 w-6 p-0"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </Button>
+                    <div className="flex space-x-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleFeedback(item.id, FeedbackType.THUMBS_UP)}
+                        disabled={feedbackMutation.isPending}
+                        className="h-6 w-6 p-0"
                       >
-                        {item.dataSource === 'cryptopanic' ? 'Live' : 'Demo'}
-                      </Badge>
-                    </>
-                  )}
-                </div>
-                <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
-                  {item.title}
-                </h3>
-                <div className="flex items-center space-x-2">
-                  {item.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="text-xs">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              <div className="flex flex-col items-end space-y-2 ml-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => window.open(item.url, '_blank')}
-                >
-                  <ExternalLink className="h-3 w-3" />
-                </Button>
-                <div className="flex space-x-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleFeedback(item.id, 'THUMBS_UP')}
-                    disabled={feedbackMutation.isPending}
-                  >
-                    <ThumbsUp className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleFeedback(item.id, 'THUMBS_DOWN')}
-                    disabled={feedbackMutation.isPending}
-                  >
-                    <ThumbsDown className="h-3 w-3" />
-                  </Button>
+                        <ThumbsUp className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleFeedback(item.id, FeedbackType.THUMBS_DOWN)}
+                        disabled={feedbackMutation.isPending}
+                        className="h-6 w-6 p-0"
+                      >
+                        <ThumbsDown className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
-        ))}
         </div>
       </CardContent>
     </Card>
