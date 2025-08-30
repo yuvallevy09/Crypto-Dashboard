@@ -2,6 +2,7 @@ import { prisma } from '../config/database';
 import { DashboardData, ContentType, FeedbackType } from '@crypto-dashboard/shared';
 import { coinGeckoService } from './coinGeckoService';
 import { cryptoPanicService } from './cryptoPanicService';
+import { memeService } from './memeService';
 import logger from '../config/logger';
 
 export class DashboardService {
@@ -10,23 +11,23 @@ export class DashboardService {
       // Get real data from APIs with fallback to mock data
       let marketOverview, trendingCoins, topGainers, coinPrices, news;
 
+      // Fetch data with individual error handling for each service
       try {
-        [marketOverview, trendingCoins, topGainers, coinPrices, news] = await Promise.all([
-          coinGeckoService.getGlobalData(),
-          coinGeckoService.getTrendingCoins(),
-          coinGeckoService.getTopGainers(3),
-          coinGeckoService.getTopCoins(25), // Increased from 10 to 25 for more coin options
-          cryptoPanicService.getTrendingNews(10), // Get trending news from CryptoPanic
-        ]);
+        marketOverview = await coinGeckoService.getGlobalData();
       } catch (error) {
-        logger.warn('API calls failed, using fallback data:', error);
-        // Fallback to mock data if APIs fail
+        logger.warn('CoinGecko global data failed, using fallback:', error instanceof Error ? error.message : 'Unknown error');
         marketOverview = {
           totalMarketCap: 3924450308279,
           totalVolume24h: 136604457007,
           marketCapChange24h: -1.8,
           volumeChange24h: -2.1,
         };
+      }
+
+      try {
+        trendingCoins = await coinGeckoService.getTrendingCoins();
+      } catch (error) {
+        logger.warn('CoinGecko trending coins failed, using fallback:', error instanceof Error ? error.message : 'Unknown error');
         trendingCoins = [
           {
             id: 'pyth-network',
@@ -45,6 +46,12 @@ export class DashboardService {
             price_change_percentage_7d_in_currency: 120.5,
           },
         ];
+      }
+
+      try {
+        topGainers = await coinGeckoService.getTopGainers(3);
+      } catch (error) {
+        logger.warn('CoinGecko top gainers failed, using fallback:', error instanceof Error ? error.message : 'Unknown error');
         topGainers = [
           {
             id: 'uchain',
@@ -63,6 +70,12 @@ export class DashboardService {
             price_change_percentage_7d_in_currency: 2000.1,
           },
         ];
+      }
+
+      try {
+        coinPrices = await coinGeckoService.getTopCoins(25);
+      } catch (error) {
+        logger.warn('CoinGecko top coins failed, using fallback:', error instanceof Error ? error.message : 'Unknown error');
         coinPrices = [
           {
             id: 'bitcoin',
@@ -97,7 +110,30 @@ export class DashboardService {
             price_change_percentage_7d_in_currency: -5.2,
           },
         ];
+      }
+
+      try {
+        news = await cryptoPanicService.getTrendingNews(10);
+        logger.info('Successfully fetched news from CryptoPanic');
+      } catch (error) {
+        logger.warn('CryptoPanic news failed, using fallback:', error instanceof Error ? error.message : 'Unknown error');
         news = cryptoPanicService.getFallbackNews();
+      }
+
+      // Get dynamic meme
+      let meme;
+      try {
+        meme = await memeService.getRandomMeme();
+        logger.info('Successfully fetched meme from meme service');
+      } catch (error) {
+        logger.warn('Meme service failed, using fallback:', error instanceof Error ? error.message : 'Unknown error');
+        meme = {
+          id: 'fallback-1',
+          title: 'Crypto Life 🚀',
+          url: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=400&h=300&fit=crop&crop=center',
+          source: 'CryptoMemes.com',
+          tags: ['CRYPTO', 'LIFE', 'FUN'],
+        };
       }
 
       const dashboardData: DashboardData = {
@@ -112,13 +148,7 @@ export class DashboardService {
           confidence: 0.85,
           createdAt: new Date(),
         },
-        meme: {
-          id: '1',
-          title: 'HODL the line!',
-          url: 'https://example.com/memes/hodl.jpg',
-          source: 'cryptomemes.com',
-          tags: ['HODL', 'BTC', 'FUN'],
-        },
+        meme,
         coinPrices,
       };
 

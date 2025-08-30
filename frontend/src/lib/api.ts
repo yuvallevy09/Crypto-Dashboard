@@ -101,13 +101,24 @@ export const dashboardAPI = {
     await api.post('/api/dashboard/feedback', data);
   },
 
-  testCoinGecko: async (): Promise<any> => {
-    const response = await api.get('/api/dashboard/test-coingecko');
-    return response.data.data;
-  },
+
 
   getChartData: async (coinId: string, days: number): Promise<any> => {
     const response = await api.get(`/api/dashboard/chart-data/${coinId}?days=${days}`);
+    return response.data.data;
+  },
+
+  getMeme: async (category?: string, tags?: string[]): Promise<any> => {
+    const params = new URLSearchParams();
+    if (category) params.append('category', category);
+    if (tags && tags.length > 0) params.append('tags', tags.join(','));
+    
+    const response = await api.get(`/api/dashboard/meme?${params.toString()}`);
+    return response.data.data;
+  },
+
+  getRedditStatus: async (): Promise<any> => {
+    const response = await api.get('/api/dashboard/reddit-status');
     return response.data.data;
   },
 };

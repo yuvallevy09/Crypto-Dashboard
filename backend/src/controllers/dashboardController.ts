@@ -3,6 +3,8 @@ import { DashboardService } from '../services/dashboardService';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { coinGeckoService } from '../services/coinGeckoService';
 import { cryptoPanicService } from '../services/cryptoPanicService';
+import { memeService } from '../services/memeService';
+import { redditService } from '../services/redditService';
 import logger from '../config/logger';
 
 const dashboardService = new DashboardService();
@@ -51,33 +53,7 @@ export class DashboardController {
     }
   }
 
-  async testCoinGecko(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      if (!req.user) {
-        res.status(401).json({ error: 'User not authenticated' });
-        return;
-      }
 
-      // Test CoinGecko API connection
-      const isAlive = await coinGeckoService.ping();
-      const topCoins = await coinGeckoService.getTopCoins(5);
-      const globalData = await coinGeckoService.getGlobalData();
-      
-      res.status(200).json({
-        message: 'CoinGecko API test successful',
-        data: {
-          isAlive,
-          topCoins,
-          globalData,
-        },
-      });
-    } catch (error: any) {
-      logger.error('CoinGecko test controller error:', error);
-      res.status(error.statusCode || 500).json({
-        error: error.message || 'CoinGecko API test failed',
-      });
-    }
-  }
 
   async getChartData(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
@@ -109,33 +85,56 @@ export class DashboardController {
     }
   }
 
-  async testCryptoPanic(req: AuthenticatedRequest, res: Response): Promise<void> {
+  async getMeme(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       if (!req.user) {
         res.status(401).json({ error: 'User not authenticated' });
         return;
       }
 
-      // Test CryptoPanic API connection
-      const trendingNews = await cryptoPanicService.getTrendingNews(5);
-      const bullishNews = await cryptoPanicService.getBullishNews(3);
-      const cacheStats = cryptoPanicService.getCacheStats();
-      
+      const { category, tags } = req.query;
+      let meme;
+
+      if (category && typeof category === 'string') {
+        meme = await memeService.getMemeByCategory(category as any);
+      } else if (tags && typeof tags === 'string') {
+        const tagArray = tags.split(',').map(tag => tag.trim());
+        meme = await memeService.getMemeByTags(tagArray);
+      } else {
+        meme = await memeService.getRandomMeme();
+      }
+
       res.status(200).json({
-        message: 'CryptoPanic API test successful',
-        data: {
-          trendingNews,
-          bullishNews,
-          cacheStats,
-        },
+        message: 'Meme retrieved successfully',
+        data: meme,
       });
     } catch (error: any) {
-      logger.error('CryptoPanic test controller error:', error);
+      logger.error('Get meme controller error:', error);
       res.status(error.statusCode || 500).json({
-        error: error.message || 'CryptoPanic API test failed',
+        error: error.message || 'Failed to get meme',
       });
     }
   }
 
+  async getRedditStatus(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'User not authenticated' });
+        return;
+      }
+
+      const status = redditService.getStatus();
+      
+      res.status(200).json({
+        message: 'Reddit service status retrieved successfully',
+        data: status,
+      });
+    } catch (error: any) {
+      logger.error('Get Reddit status controller error:', error);
+      res.status(error.statusCode || 500).json({
+        error: error.message || 'Failed to get Reddit status',
+      });
+    }
+  }
 
 }

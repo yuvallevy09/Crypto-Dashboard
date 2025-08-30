@@ -43,12 +43,13 @@ export function NewsSection({ news }: NewsSectionProps) {
   };
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg font-semibold">Market News</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {news.map((item) => (
+      <CardContent className="h-[calc(100%-4rem)] overflow-y-auto">
+        <div className="space-y-4">
+          {news.map((item) => (
           <div key={item.id} className="border-b border-gray-100 pb-4 last:border-b-0">
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -109,6 +110,7 @@ export function NewsSection({ news }: NewsSectionProps) {
             </div>
           </div>
         ))}
+        </div>
       </CardContent>
     </Card>
   );

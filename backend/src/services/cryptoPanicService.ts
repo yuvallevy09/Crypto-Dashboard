@@ -10,44 +10,130 @@ interface CryptoPanicPost {
   published_at: string;
   created_at: string;
   kind: string;
+  // Add fields that might be in the actual API response
+  source?: {
+    title: string;
+    region: string;
+    domain: string;
+    type: string;
+  };
+  original_url?: string;
+  url?: string;
+  instruments?: Array<{
+    code: string;
+    title: string;
+    slug: string;
+    url: string;
+  }>;
 }
 
 interface CryptoPanicResponse {
   results: CryptoPanicPost[];
-  count: number;
+  count?: number;
   next: string | null;
   previous: string | null;
 }
 
 export class CryptoPanicService {
   private readonly baseUrl = 'https://cryptopanic.com/api/developer/v2/posts/';
-  private readonly apiKey: string;
   private readonly cache = new Map<string, { data: NewsItem[]; timestamp: number }>();
   private readonly cacheTTL = 5 * 60 * 1000; // 5 minutes cache
 
-  constructor() {
-    this.apiKey = process.env.CRYPTOPANIC_API_KEY;
-    if (!this.apiKey) {
+  private get apiKey(): string {
+    const key = process.env.CRYPTOPANIC_API_KEY;
+    if (!key) {
       logger.warn('CRYPTOPANIC_API_KEY not found in environment variables');
+      return '';
     }
+    return key;
   }
 
   private transformPost(post: CryptoPanicPost): NewsItem {
-    // Extract source from slug or use a default
-    const source = this.extractSourceFromSlug(post.slug);
+    // Use actual API response fields if available, otherwise fall back to our extraction
+    const source = post.source?.title || this.extractSourceFromSlug(post.slug);
     
-    // Extract tags from title and description
-    const tags = this.extractTagsFromContent(post.title, post.description);
+    // Extract tags from instruments if available, otherwise from content
+    let tags: string[] = [];
+    if (post.instruments && post.instruments.length > 0) {
+      tags = post.instruments.map(instrument => instrument.code);
+    } else {
+      tags = this.extractTagsFromContent(post.title, post.description);
+    }
+    
+    // Use original_url if available, otherwise try to find it
+    const url = post.original_url || post.url || this.findOriginalSourceUrl(post.title, post.description, source) || `https://cryptopanic.com/news/${post.slug}/`;
     
     return {
       id: post.id.toString(),
       title: post.title,
-      url: `https://cryptopanic.com/news/${post.slug}/`,
+      url: url,
       source: source,
       publishedAt: new Date(post.published_at),
       tags: tags,
       dataSource: 'cryptopanic', // Indicate this is real API data
     };
+  }
+
+  private findOriginalSourceUrl(title: string, description: string, source: string): string | null {
+    // Common crypto news sources and their URL patterns
+    const sourcePatterns: Record<string, string> = {
+      'COINBASE': 'https://blog.coinbase.com',
+      'BINANCE': 'https://www.binance.com/en/blog',
+      'COINMARKETCAP': 'https://coinmarketcap.com',
+      'COINGECKO': 'https://www.coingecko.com',
+      'DECRYPT': 'https://decrypt.co',
+      'COINTELEGRAPH': 'https://cointelegraph.com',
+      'COINDESK': 'https://www.coindesk.com',
+      'THEBLOCK': 'https://www.theblock.co',
+      'CRYPTOBRIEFING': 'https://cryptobriefing.com',
+      'BITCOINIST': 'https://bitcoinist.com',
+      'NEWSBTC': 'https://www.newsbtc.com',
+      'COINSPEAKER': 'https://www.coinspeaker.com',
+      'CRYPTOPOTATO': 'https://cryptopotato.com',
+      'AMBCRYPTO': 'https://ambcrypto.com',
+      'COINQUORA': 'https://coinquora.com',
+      'CRYPTOGLOBE': 'https://cryptoglobe.com',
+      'COINCODEX': 'https://coincodex.com',
+    };
+
+    // Try to find a matching source pattern
+    const upperSource = source.toUpperCase();
+    for (const [pattern, baseUrl] of Object.entries(sourcePatterns)) {
+      if (upperSource.includes(pattern) || pattern.includes(upperSource)) {
+        return baseUrl;
+      }
+    }
+
+    // If no direct match, try to extract from description
+    const urlMatch = description.match(/https?:\/\/[^\s<>"]+/);
+    if (urlMatch) {
+      return urlMatch[0];
+    }
+
+    // Try to construct URL from common patterns
+    const commonDomains = [
+      'cointelegraph.com',
+      'coindesk.com',
+      'decrypt.co',
+      'theblock.co',
+      'cryptobriefing.com',
+      'bitcoinist.com',
+      'newsbtc.com',
+      'coinspeaker.com',
+      'cryptopotato.com',
+      'ambcrypto.com',
+      'coinquora.com',
+      'cryptoglobe.com',
+      'coincodex.com'
+    ];
+
+    for (const domain of commonDomains) {
+      if (description.toLowerCase().includes(domain) || title.toLowerCase().includes(domain)) {
+        return `https://${domain}`;
+      }
+    }
+
+    return null; // Fallback to CryptoPanic URL
   }
 
   private extractSourceFromSlug(slug: string): string {
@@ -126,6 +212,7 @@ export class CryptoPanicService {
     try {
       const queryParams = new URLSearchParams({
         auth_token: this.apiKey,
+        public: 'true', // Use public mode for better results
         ...(params.filter && { filter: params.filter }),
         ...(params.currencies && { currencies: params.currencies.join(',') }),
         ...(params.regions && { regions: params.regions.join(',') }),
@@ -140,12 +227,27 @@ export class CryptoPanicService {
         params 
       });
 
+      logger.info('Making request to CryptoPanic API', {
+        url: url.replace(this.apiKey, '[REDACTED]'),
+        hasApiKey: !!this.apiKey
+      });
+
       const response = await axios.get<CryptoPanicResponse>(url, {
         timeout: 10000, // 10 second timeout
         headers: {
           'User-Agent': 'CryptoDashboard/1.0',
         },
       });
+
+      logger.info('CryptoPanic API response received', {
+        status: response.status,
+        statusText: response.statusText,
+        resultsCount: response.data?.results?.length || 0
+      });
+
+      if (!response.data || !response.data.results) {
+        throw new Error('Invalid response structure from CryptoPanic API');
+      }
 
       const newsItems = response.data.results.map(post => this.transformPost(post));
       
@@ -163,17 +265,18 @@ export class CryptoPanicService {
       return newsItems;
     } catch (error) {
       logger.error('Error fetching news from CryptoPanic API:', {
-        message: error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        url: error.config?.url,
-        method: error.config?.method,
-        stack: error.stack
+        message: error instanceof Error ? error.message : 'Unknown error',
+        status: (error as any)?.response?.status,
+        statusText: (error as any)?.response?.statusText,
+        data: (error as any)?.response?.data,
+        url: (error as any)?.config?.url?.replace(this.apiKey, '[REDACTED]'),
+        method: (error as any)?.config?.method,
+        hasApiKey: !!this.apiKey,
+        apiKeyLength: this.apiKey?.length || 0
       });
       
-      // Return fallback data on error
-      return this.getFallbackNews();
+      // Throw the error so the calling service can handle it
+      throw error;
     }
   }
 
@@ -191,6 +294,18 @@ export class CryptoPanicService {
 
   async getBearishNews(limit: number = 10): Promise<NewsItem[]> {
     return this.getNews({ filter: 'bearish', limit });
+  }
+
+  async getImportantNews(limit: number = 10): Promise<NewsItem[]> {
+    return this.getNews({ filter: 'important', limit });
+  }
+
+  async getRisingNews(limit: number = 10): Promise<NewsItem[]> {
+    return this.getNews({ filter: 'rising', limit });
+  }
+
+  async getNewsByType(type: 'hot' | 'rising' | 'bullish' | 'bearish' | 'important' | 'saved' | 'lol', limit: number = 10): Promise<NewsItem[]> {
+    return this.getNews({ filter: type, limit });
   }
 
   private getRemainingRequests(headers: any): string {
@@ -263,4 +378,15 @@ export class CryptoPanicService {
   }
 }
 
-export const cryptoPanicService = new CryptoPanicService();
+// Lazy singleton pattern to ensure environment variables are loaded
+let _cryptoPanicService: CryptoPanicService | null = null;
+
+export function getCryptoPanicService(): CryptoPanicService {
+  if (!_cryptoPanicService) {
+    _cryptoPanicService = new CryptoPanicService();
+  }
+  return _cryptoPanicService;
+}
+
+// Export the service instance
+export const cryptoPanicService = getCryptoPanicService();

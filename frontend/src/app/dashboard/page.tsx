@@ -84,11 +84,11 @@ export default function DashboardPage() {
         </div>
 
         {/* Coin Prices and Meme */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="lg:w-2/3">
             <CoinPricesSection coins={dashboardData.coinPrices} />
           </div>
-          <div>
+          <div className="lg:w-1/3">
             <MemeSection meme={dashboardData.meme} />
           </div>
         </div>

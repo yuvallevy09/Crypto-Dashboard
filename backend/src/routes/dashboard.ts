@@ -13,15 +13,17 @@ router.get('/', authenticateToken, dashboardController.getDashboardData.bind(das
 // POST /api/dashboard/feedback
 router.post('/feedback', authenticateToken, validateBody(FeedbackSchema), dashboardController.submitFeedback.bind(dashboardController));
 
-// GET /api/dashboard/test-coingecko (for testing API connection)
-router.get('/test-coingecko', authenticateToken, dashboardController.testCoinGecko.bind(dashboardController));
 
-// GET /api/dashboard/test-cryptopanic (for testing CryptoPanic API connection)
-router.get('/test-cryptopanic', authenticateToken, dashboardController.testCryptoPanic.bind(dashboardController));
 
 
 
 // GET /api/dashboard/chart-data/:coinId
 router.get('/chart-data/:coinId', authenticateToken, dashboardController.getChartData.bind(dashboardController));
+
+// GET /api/dashboard/meme
+router.get('/meme', authenticateToken, dashboardController.getMeme.bind(dashboardController));
+
+// GET /api/dashboard/reddit-status
+router.get('/reddit-status', authenticateToken, dashboardController.getRedditStatus.bind(dashboardController));
 
 export default router;
