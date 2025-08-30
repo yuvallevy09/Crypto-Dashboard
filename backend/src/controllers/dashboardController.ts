@@ -1,10 +1,12 @@
 import { Response } from 'express';
 import { DashboardService } from '../services/dashboardService';
 import { AuthenticatedRequest } from '../middleware/auth';
+import { prisma } from '../config/database';
 import { coinGeckoService } from '../services/coinGeckoService';
 import { cryptoPanicService } from '../services/cryptoPanicService';
 import { memeService } from '../services/memeService';
 import { redditService } from '../services/redditService';
+import { openRouterService } from '../services/openRouterService';
 import logger from '../config/logger';
 
 const dashboardService = new DashboardService();
@@ -133,6 +135,59 @@ export class DashboardController {
       logger.error('Get Reddit status controller error:', error);
       res.status(error.statusCode || 500).json({
         error: error.message || 'Failed to get Reddit status',
+      });
+    }
+  }
+
+  async getAIInsight(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'User not authenticated' });
+        return;
+      }
+
+      // Get user preferences for personalized insight
+      const userPrefs = await prisma.userPreferences.findUnique({
+        where: { userId: req.user.id },
+      });
+
+      const userPreferences = userPrefs ? {
+        cryptoInterests: userPrefs.cryptoInterests,
+        investorType: userPrefs.investorType,
+        contentPreferences: userPrefs.contentPreferences,
+      } : undefined;
+
+      const aiInsight = await openRouterService.generateAIInsight(userPreferences);
+      
+      res.status(200).json({
+        message: 'AI insight generated successfully',
+        data: aiInsight,
+      });
+    } catch (error: any) {
+      logger.error('Get AI insight controller error:', error);
+      res.status(error.statusCode || 500).json({
+        error: error.message || 'Failed to generate AI insight',
+      });
+    }
+  }
+
+  async getOpenRouterStatus(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'User not authenticated' });
+        return;
+      }
+
+      const status = await openRouterService.checkAPIKeyStatus();
+      
+      res.status(200).json({
+        message: 'OpenRouter service status retrieved successfully',
+        data: status,
+      });
+    } catch (error: any) {
+      logger.error('Get OpenRouter status controller error:', error);
+      res.status(error.statusCode || 500).json({
+        error: error.message || 'Failed to get OpenRouter status',
       });
     }
   }

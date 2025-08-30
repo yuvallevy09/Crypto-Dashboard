@@ -18,11 +18,7 @@ export function MemeSection({ meme }: MemeSectionProps) {
 
   const feedbackMutation = useMutation({
     mutationFn: ({ contentId, rating }: { contentId: string; rating: FeedbackType }) =>
-      dashboardAPI.submitFeedback({
-        contentType: ContentType.MEME,
-        contentId,
-        rating,
-      }),
+      dashboardAPI.submitFeedback(ContentType.MEME, contentId, rating),
   });
 
   const handleFeedback = (rating: FeedbackType) => {

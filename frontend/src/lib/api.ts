@@ -97,8 +97,8 @@ export const dashboardAPI = {
     return response.data.data;
   },
 
-  submitFeedback: async (data: { contentType: string; contentId: string; rating: string }): Promise<void> => {
-    await api.post('/api/dashboard/feedback', data);
+  submitFeedback: async (contentType: string, contentId: string, rating: string): Promise<void> => {
+    await api.post('/api/dashboard/feedback', { contentType, contentId, rating });
   },
 
 
@@ -119,6 +119,16 @@ export const dashboardAPI = {
 
   getRedditStatus: async (): Promise<any> => {
     const response = await api.get('/api/dashboard/reddit-status');
+    return response.data.data;
+  },
+
+  getAIInsight: async (): Promise<any> => {
+    const response = await api.get('/api/dashboard/ai-insight');
+    return response.data.data;
+  },
+
+  getOpenRouterStatus: async (): Promise<any> => {
+    const response = await api.get('/api/dashboard/openrouter-status');
     return response.data.data;
   },
 };

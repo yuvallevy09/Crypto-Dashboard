@@ -3,11 +3,28 @@ import { DashboardData, ContentType, FeedbackType } from '@crypto-dashboard/shar
 import { coinGeckoService } from './coinGeckoService';
 import { cryptoPanicService } from './cryptoPanicService';
 import { memeService } from './memeService';
+import { openRouterService } from './openRouterService';
 import logger from '../config/logger';
 
 export class DashboardService {
   async getDashboardData(userId: string): Promise<DashboardData> {
     try {
+      // Get user preferences for personalized AI insight
+      let userPreferences;
+      try {
+        const userPrefs = await prisma.userPreferences.findUnique({
+          where: { userId },
+        });
+        userPreferences = userPrefs ? {
+          cryptoInterests: userPrefs.cryptoInterests,
+          investorType: userPrefs.investorType,
+          contentPreferences: userPrefs.contentPreferences,
+        } : undefined;
+      } catch (error) {
+        logger.warn('Failed to fetch user preferences for AI insight:', error);
+        userPreferences = undefined;
+      }
+
       // Get real data from APIs with fallback to mock data
       let marketOverview, trendingCoins, topGainers, coinPrices, news;
 
@@ -136,18 +153,28 @@ export class DashboardService {
         };
       }
 
+      // Get AI insight
+      let aiInsight;
+      try {
+        aiInsight = await openRouterService.generateAIInsight(userPreferences);
+        logger.info('Successfully generated AI insight');
+      } catch (error) {
+        logger.warn('AI insight generation failed, using fallback:', error instanceof Error ? error.message : 'Unknown error');
+        aiInsight = {
+          id: 'fallback-1',
+          content: 'The crypto market is showing signs of consolidation after recent volatility. Bitcoin\'s dominance remains strong while altcoins are experiencing mixed performance. Keep an eye on regulatory developments as they continue to impact market sentiment.',
+          type: 'MARKET_ANALYSIS' as const,
+          confidence: 0.5,
+          createdAt: new Date(),
+        };
+      }
+
       const dashboardData: DashboardData = {
         marketOverview,
         trendingCoins,
         topGainers,
         news,
-        aiInsight: {
-          id: '1',
-          content: 'The crypto market is showing signs of consolidation after recent volatility. Bitcoin\'s dominance remains strong while altcoins are experiencing mixed performance. Keep an eye on regulatory developments as they continue to impact market sentiment.',
-          type: 'MARKET_ANALYSIS',
-          confidence: 0.85,
-          createdAt: new Date(),
-        },
+        aiInsight,
         meme,
         coinPrices,
       };

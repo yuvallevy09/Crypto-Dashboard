@@ -26,4 +26,10 @@ router.get('/meme', authenticateToken, dashboardController.getMeme.bind(dashboar
 // GET /api/dashboard/reddit-status
 router.get('/reddit-status', authenticateToken, dashboardController.getRedditStatus.bind(dashboardController));
 
+// GET /api/dashboard/ai-insight
+router.get('/ai-insight', authenticateToken, dashboardController.getAIInsight.bind(dashboardController));
+
+// GET /api/dashboard/openrouter-status
+router.get('/openrouter-status', authenticateToken, dashboardController.getOpenRouterStatus.bind(dashboardController));
+
 export default router;

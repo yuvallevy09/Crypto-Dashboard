@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { dashboardAPI } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
 import { DashboardHeader } from '@/components/dashboard/dashboard-header';
+import { AIInsightSection } from '@/components/dashboard/ai-insight-section';
 import { ChartsSection } from '@/components/dashboard/charts-section';
 import { NewsSection } from '@/components/dashboard/news-section';
 import { CoinPricesSection } from '@/components/dashboard/coin-prices-section';
@@ -77,6 +78,11 @@ export default function DashboardPage() {
       <DashboardHeader user={user} />
       
       <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* AI Insight of the Day */}
+        <div className="mb-6">
+          <AIInsightSection aiInsight={dashboardData.aiInsight} />
+        </div>
+
         {/* Charts and News */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <ChartsSection coins={dashboardData.coinPrices} />

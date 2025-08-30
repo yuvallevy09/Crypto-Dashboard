@@ -15,11 +15,7 @@ interface NewsSectionProps {
 export function NewsSection({ news }: NewsSectionProps) {
   const feedbackMutation = useMutation({
     mutationFn: ({ contentId, rating }: { contentId: string; rating: FeedbackType }) =>
-      dashboardAPI.submitFeedback({
-        contentType: ContentType.NEWS,
-        contentId,
-        rating,
-      }),
+      dashboardAPI.submitFeedback(ContentType.NEWS, contentId, rating),
   });
 
   const handleFeedback = (contentId: string, rating: FeedbackType) => {

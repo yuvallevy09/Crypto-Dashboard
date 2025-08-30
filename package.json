@@ -42,5 +42,8 @@
     "postgresql"
   ],
   "author": "Your Name",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "sonner": "^2.0.7"
+  }
 }
