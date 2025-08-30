@@ -1,7 +1,6 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { CoinData } from '@crypto-dashboard/shared';
 
@@ -42,14 +41,12 @@ export function CoinPricesSection({ coins }: CoinPricesSectionProps) {
               <tr className="border-b border-gray-200">
                 <th className="text-left py-3 px-2 text-sm font-medium text-gray-500">Rank</th>
                 <th className="text-left py-3 px-2 text-sm font-medium text-gray-500">Coin</th>
-                <th className="text-left py-3 px-2 text-sm font-medium text-gray-500">Buy</th>
                 <th className="text-right py-3 px-2 text-sm font-medium text-gray-500">Price</th>
                 <th className="text-right py-3 px-2 text-sm font-medium text-gray-500">1h</th>
                 <th className="text-right py-3 px-2 text-sm font-medium text-gray-500">24h</th>
                 <th className="text-right py-3 px-2 text-sm font-medium text-gray-500">7d</th>
                 <th className="text-right py-3 px-2 text-sm font-medium text-gray-500">24h Volume</th>
                 <th className="text-right py-3 px-2 text-sm font-medium text-gray-500">Market Cap</th>
-                <th className="text-right py-3 px-2 text-sm font-medium text-gray-500">Last 7 Days</th>
               </tr>
             </thead>
             <tbody>
@@ -71,9 +68,6 @@ export function CoinPricesSection({ coins }: CoinPricesSectionProps) {
                         <p className="text-xs text-gray-500">{coin.symbol}</p>
                       </div>
                     </div>
-                  </td>
-                  <td className="py-3 px-2">
-                    <Button size="sm" variant="outline">Buy</Button>
                   </td>
                   <td className="py-3 px-2 text-right text-sm font-medium">
                     {formatCurrency(coin.current_price)}
@@ -98,13 +92,6 @@ export function CoinPricesSection({ coins }: CoinPricesSectionProps) {
                   </td>
                   <td className="py-3 px-2 text-right text-sm text-gray-600">
                     {formatVolume(coin.market_cap)}
-                  </td>
-                  <td className="py-3 px-2 text-right">
-                    <div className="w-16 h-8 bg-gray-100 rounded flex items-center justify-center">
-                      <div className={`w-full h-1 rounded-full ${
-                        (coin.price_change_percentage_7d_in_currency || 0) >= 0 ? 'bg-green-500' : 'bg-red-500'
-                      }`}></div>
-                    </div>
                   </td>
                 </tr>
               ))}
