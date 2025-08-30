@@ -70,7 +70,7 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Charts and News */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <ChartsSection />
+          <ChartsSection coins={dashboardData.coinPrices} />
           <NewsSection news={dashboardData.news} />
         </div>
 

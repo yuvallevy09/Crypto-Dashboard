@@ -105,6 +105,11 @@ export const dashboardAPI = {
     const response = await api.get('/api/dashboard/test-coingecko');
     return response.data.data;
   },
+
+  getChartData: async (coinId: string, days: number): Promise<any> => {
+    const response = await api.get(`/api/dashboard/chart-data/${coinId}?days=${days}`);
+    return response.data.data;
+  },
 };
 
 export default api;

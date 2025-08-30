@@ -261,6 +261,28 @@ export class CoinGeckoService {
     }
   }
 
+  async getHistoricalData(coinId: string, days: number, currency: string = 'usd'): Promise<{
+    prices: [number, number][];
+    market_caps: [number, number][];
+    total_volumes: [number, number][];
+  }> {
+    try {
+      const data = await this.makeRequest(`/coins/${coinId}/market_chart`, {
+        vs_currency: currency,
+        days: days.toString(),
+      });
+
+      return {
+        prices: data.prices,
+        market_caps: data.market_caps,
+        total_volumes: data.total_volumes,
+      };
+    } catch (error) {
+      logger.error(`Failed to fetch historical data for ${coinId}:`, error);
+      throw error;
+    }
+  }
+
   async ping(): Promise<boolean> {
     try {
       await this.makeRequest('/ping');

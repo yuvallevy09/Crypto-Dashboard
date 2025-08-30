@@ -77,4 +77,34 @@ export class DashboardController {
       });
     }
   }
+
+  async getChartData(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'User not authenticated' });
+        return;
+      }
+
+      const { coinId } = req.params;
+      const { days = '7' } = req.query;
+      
+      const daysNumber = parseInt(days as string, 10);
+      if (isNaN(daysNumber) || daysNumber < 1 || daysNumber > 365) {
+        res.status(400).json({ error: 'Days parameter must be between 1 and 365' });
+        return;
+      }
+
+      const historicalData = await coinGeckoService.getHistoricalData(coinId, daysNumber);
+      
+      res.status(200).json({
+        message: 'Chart data retrieved successfully',
+        data: historicalData,
+      });
+    } catch (error: any) {
+      logger.error('Get chart data controller error:', error);
+      res.status(error.statusCode || 500).json({
+        error: error.message || 'Failed to get chart data',
+      });
+    }
+  }
 }
