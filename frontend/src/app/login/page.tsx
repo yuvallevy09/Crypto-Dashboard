@@ -19,12 +19,34 @@ export default function LoginPage() {
     email: '',
     password: '',
   });
-  const [error, setError] = useState<string>('');
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [generalError, setGeneralError] = useState<string>('');
 
   const loginMutation = useMutation({
-    mutationFn: authAPI.login,
+    mutationFn: async (data: LoginRequest) => {
+      try {
+        const response = await authAPI.login(data);
+        return response;
+      } catch (error: any) {
+        // Handle validation errors specifically
+        if (error.response?.status === 400) {
+          if (error.response?.data?.details) {
+            // Clear general error and set field-specific errors
+            setGeneralError('');
+            const fieldErrors: { [key: string]: string } = {};
+            error.response.data.details.forEach((detail: any) => {
+              fieldErrors[detail.field] = detail.message;
+            });
+            setErrors(fieldErrors);
+            throw error; // Re-throw to trigger onError
+          }
+        }
+        throw error;
+      }
+    },
     onSuccess: (data) => {
-      setError('');
+      setErrors({});
+      setGeneralError('');
       setUser(data.user);
       setToken(data.token);
       router.push('/dashboard');
@@ -33,35 +55,43 @@ export default function LoginPage() {
       let errorMessage = 'Login failed';
       
       if (error.response?.status === 400) {
-        // Validation error
-        if (error.response?.data?.details) {
-          const details = error.response.data.details;
-          errorMessage = details.map((d: any) => d.message).join(', ');
-        } else {
-          errorMessage = error.response?.data?.error || 'Invalid input data';
+        // Validation errors are already handled above
+        if (!error.response?.data?.details) {
+          setGeneralError(error.response?.data?.error || 'Invalid input data');
         }
       } else if (error.response?.status === 401) {
         // Authentication error
-        errorMessage = 'Invalid email or password';
+        setGeneralError('Invalid email or password');
       } else if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
+        setGeneralError(error.response.data.error);
+      } else {
+        setGeneralError('Login failed. Please try again.');
       }
-      
-      setError(errorMessage);
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Clear previous errors
+    setErrors({});
+    setGeneralError('');
     loginMutation.mutate(formData);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }));
+    
+    // Clear field-specific error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
+
+  const getFieldError = (fieldName: string) => errors[fieldName] || '';
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -73,9 +103,9 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {error && (
+          {generalError && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-red-600 text-sm">{error}</p>
+              <p className="text-red-600 text-sm">{generalError}</p>
             </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -89,7 +119,11 @@ export default function LoginPage() {
                 value={formData.email}
                 onChange={handleInputChange}
                 required
+                className={getFieldError('email') ? 'border-red-500' : ''}
               />
+              {getFieldError('email') && (
+                <p className="text-red-500 text-xs">{getFieldError('email')}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -101,7 +135,11 @@ export default function LoginPage() {
                 value={formData.password}
                 onChange={handleInputChange}
                 required
+                className={getFieldError('password') ? 'border-red-500' : ''}
               />
+              {getFieldError('password') && (
+                <p className="text-red-500 text-xs">{getFieldError('password')}</p>
+              )}
             </div>
             <Button
               type="submit"
@@ -111,7 +149,9 @@ export default function LoginPage() {
               {loginMutation.isPending ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
-          <div className="mt-4 text-center text-sm">
+          <div
+            className="mt-4 text-center text-sm"
+          >
             Don't have an account?{' '}
             <Link href="/register" className="text-blue-600 hover:underline">
               Sign up

@@ -70,7 +70,7 @@ export default function OnboardingPage() {
       case 1:
         return formData.cryptoInterests.length > 0;
       case 2:
-        return formData.investorType !== InvestorType.NEWBIE;
+        return formData.investorType !== undefined;
       case 3:
         return formData.contentPreferences.length > 0;
       default:

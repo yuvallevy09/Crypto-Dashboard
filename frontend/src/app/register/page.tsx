@@ -20,47 +20,71 @@ export default function RegisterPage() {
     name: '',
     password: '',
   });
-  const [error, setError] = useState<string>('');
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [generalError, setGeneralError] = useState<string>('');
+
+
 
   const registerMutation = useMutation({
     mutationFn: authAPI.register,
     onSuccess: (data) => {
-      setError('');
+      setErrors({});
+      setGeneralError('');
       setUser(data.user);
       setToken(data.token);
       router.push('/onboarding');
     },
     onError: (error: any) => {
-      console.error('Registration failed:', error);
-      let errorMessage = 'Registration failed';
-      
       if (error.response?.status === 400) {
-        // Validation error
+        // Handle validation errors
         if (error.response?.data?.details) {
-          const details = error.response.data.details;
-          errorMessage = details.map((d: any) => d.message).join(', ');
+          // Set field-specific errors
+          const fieldErrors: { [key: string]: string } = {};
+          error.response.data.details.forEach((detail: any) => {
+            fieldErrors[detail.field] = detail.message;
+          });
+          setErrors(fieldErrors);
+          setGeneralError(''); // Clear general error
         } else {
-          errorMessage = error.response?.data?.error || 'Invalid input data';
+          // Set general error for non-validation 400 errors
+          setGeneralError(error.response?.data?.error || 'Invalid input data');
+          setErrors({}); // Clear field errors
         }
+      } else if (error.response?.status === 409) {
+        setGeneralError('Email already exists');
+        setErrors({}); // Clear field errors
       } else if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
+        setGeneralError(error.response.data.error);
+        setErrors({}); // Clear field errors
+      } else {
+        setGeneralError('Registration failed. Please try again.');
+        setErrors({}); // Clear field errors
       }
-      
-      setError(errorMessage);
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Clear previous errors
+    setErrors({});
+    setGeneralError('');
     registerMutation.mutate(formData);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }));
+    
+    // Clear field-specific error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
+
+  const getFieldError = (fieldName: string) => errors[fieldName] || '';
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -72,9 +96,9 @@ export default function RegisterPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {error && (
+          {generalError && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-red-600 text-sm">{error}</p>
+              <p className="text-red-600 text-sm">{generalError}</p>
             </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -88,7 +112,12 @@ export default function RegisterPage() {
                 value={formData.name}
                 onChange={handleInputChange}
                 required
+                className={getFieldError('name') ? 'border-red-500' : ''}
+                autoComplete="name"
               />
+              {getFieldError('name') && (
+                <p className="text-red-500 text-xs">{getFieldError('name')}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -100,7 +129,12 @@ export default function RegisterPage() {
                 value={formData.email}
                 onChange={handleInputChange}
                 required
+                className={getFieldError('email') ? 'border-red-500' : ''}
+                autoComplete="email"
               />
+              {getFieldError('email') && (
+                <p className="text-red-500 text-xs">{getFieldError('email')}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -112,7 +146,12 @@ export default function RegisterPage() {
                 value={formData.password}
                 onChange={handleInputChange}
                 required
+                className={getFieldError('password') ? 'border-red-500' : ''}
+                autoComplete="new-password"
               />
+              {getFieldError('password') && (
+                <p className="text-red-500 text-xs">{getFieldError('password')}</p>
+              )}
             </div>
             <Button
               type="submit"

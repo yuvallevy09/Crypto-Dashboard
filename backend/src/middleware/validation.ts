@@ -17,7 +17,7 @@ export const validateRequest = (schema: AnyZodObject) => {
         res.status(400).json({
           error: 'Validation failed',
           details: error.errors.map(err => ({
-            field: err.path.join('.'),
+            field: err.path[err.path.length - 1], // Get the last part of the path (the actual field name)
             message: err.message,
           })),
         });
@@ -40,7 +40,7 @@ export const validateBody = (schema: AnyZodObject) => {
         res.status(400).json({
           error: 'Invalid request body',
           details: error.errors.map(err => ({
-            field: err.path.join('.'),
+            field: err.path[err.path.length - 1], // Get the last part of the path (the actual field name)
             message: err.message,
           })),
         });
