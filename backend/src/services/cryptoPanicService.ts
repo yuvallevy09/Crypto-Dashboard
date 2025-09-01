@@ -10,15 +10,12 @@ interface CryptoPanicPost {
   published_at: string;
   created_at: string;
   kind: string;
-  // Add fields that might be in the actual API response
   source?: {
     title: string;
     region: string;
     domain: string;
     type: string;
   };
-  original_url?: string;
-  url?: string;
   instruments?: Array<{
     code: string;
     title: string;
@@ -49,10 +46,8 @@ export class CryptoPanicService {
   }
 
   private transformPost(post: CryptoPanicPost): NewsItem {
-    // Use actual API response fields if available, otherwise fall back to our extraction
     const source = post.source?.title || this.extractSourceFromSlug(post.slug);
     
-    // Extract tags from instruments if available, otherwise from content
     let tags: string[] = [];
     if (post.instruments && post.instruments.length > 0) {
       tags = post.instruments.map(instrument => instrument.code);
@@ -60,8 +55,8 @@ export class CryptoPanicService {
       tags = this.extractTagsFromContent(post.title, post.description);
     }
     
-    // Use original_url if available, otherwise try to find it
-    const url = post.original_url || post.url || this.findOriginalSourceUrl(post.title, post.description, source) || `https://cryptopanic.com/news/${post.slug}/`;
+    // Always use CryptoPanic URL since original URLs aren't available in Developer tier
+    const url = `https://cryptopanic.com/news/${post.slug}/`;
     
     return {
       id: post.id.toString(),
@@ -70,70 +65,8 @@ export class CryptoPanicService {
       source: source,
       publishedAt: new Date(post.published_at),
       tags: tags,
-      dataSource: 'cryptopanic', // Indicate this is real API data
+      dataSource: 'cryptopanic',
     };
-  }
-
-  private findOriginalSourceUrl(title: string, description: string, source: string): string | null {
-    // Common crypto news sources and their URL patterns
-    const sourcePatterns: Record<string, string> = {
-      'COINBASE': 'https://blog.coinbase.com',
-      'BINANCE': 'https://www.binance.com/en/blog',
-      'COINMARKETCAP': 'https://coinmarketcap.com',
-      'COINGECKO': 'https://www.coingecko.com',
-      'DECRYPT': 'https://decrypt.co',
-      'COINTELEGRAPH': 'https://cointelegraph.com',
-      'COINDESK': 'https://www.coindesk.com',
-      'THEBLOCK': 'https://www.theblock.co',
-      'CRYPTOBRIEFING': 'https://cryptobriefing.com',
-      'BITCOINIST': 'https://bitcoinist.com',
-      'NEWSBTC': 'https://www.newsbtc.com',
-      'COINSPEAKER': 'https://www.coinspeaker.com',
-      'CRYPTOPOTATO': 'https://cryptopotato.com',
-      'AMBCRYPTO': 'https://ambcrypto.com',
-      'COINQUORA': 'https://coinquora.com',
-      'CRYPTOGLOBE': 'https://cryptoglobe.com',
-      'COINCODEX': 'https://coincodex.com',
-    };
-
-    // Try to find a matching source pattern
-    const upperSource = source.toUpperCase();
-    for (const [pattern, baseUrl] of Object.entries(sourcePatterns)) {
-      if (upperSource.includes(pattern) || pattern.includes(upperSource)) {
-        return baseUrl;
-      }
-    }
-
-    // If no direct match, try to extract from description
-    const urlMatch = description.match(/https?:\/\/[^\s<>"]+/);
-    if (urlMatch) {
-      return urlMatch[0];
-    }
-
-    // Try to construct URL from common patterns
-    const commonDomains = [
-      'cointelegraph.com',
-      'coindesk.com',
-      'decrypt.co',
-      'theblock.co',
-      'cryptobriefing.com',
-      'bitcoinist.com',
-      'newsbtc.com',
-      'coinspeaker.com',
-      'cryptopotato.com',
-      'ambcrypto.com',
-      'coinquora.com',
-      'cryptoglobe.com',
-      'coincodex.com'
-    ];
-
-    for (const domain of commonDomains) {
-      if (description.toLowerCase().includes(domain) || title.toLowerCase().includes(domain)) {
-        return `https://${domain}`;
-      }
-    }
-
-    return null; // Fallback to CryptoPanic URL
   }
 
   private extractSourceFromSlug(slug: string): string {
@@ -206,8 +139,6 @@ export class CryptoPanicService {
       logger.warn('CryptoPanic API key not available, returning fallback data');
       return this.getFallbackNews();
     }
-
-
 
     try {
       const queryParams = new URLSearchParams({
@@ -322,7 +253,7 @@ export class CryptoPanicService {
         source: 'coincu.com',
         publishedAt: new Date(),
         tags: ['NYLA', 'HONG KONG', 'VENTURE CAPITAL'],
-        dataSource: 'fallback', // Indicate this is fallback data
+        dataSource: 'fallback',
       },
       {
         id: 'fallback-2',
@@ -335,29 +266,11 @@ export class CryptoPanicService {
       },
       {
         id: 'fallback-3',
-        title: 'Shiba Inu Price Set For 650% Expansion To $0.00009 ATH If This Happens',
-        url: 'https://cryptonews.com/news/shiba-inu-price-prediction-650-expansion/',
-        source: 'cryptonews.com',
-        publishedAt: new Date(Date.now() - 1200000), // 20 minutes ago
-        tags: ['SHIB', 'ATH', 'PRICE PREDICTION'],
-        dataSource: 'fallback',
-      },
-      {
-        id: 'fallback-4',
         title: 'Bitcoin ETF Inflows Continue as Institutional Adoption Grows',
         url: 'https://cryptonews.com/news/bitcoin-etf-inflows-institutional-adoption/',
         source: 'cryptonews.com',
         publishedAt: new Date(Date.now() - 1800000), // 30 minutes ago
         tags: ['BTC', 'ETF', 'INSTITUTIONAL'],
-        dataSource: 'fallback',
-      },
-      {
-        id: 'fallback-5',
-        title: 'Ethereum Layer 2 Solutions See Record Growth in TVL',
-        url: 'https://defipulse.com/news/ethereum-layer2-tvl-growth/',
-        source: 'defipulse.com',
-        publishedAt: new Date(Date.now() - 2400000), // 40 minutes ago
-        tags: ['ETH', 'LAYER2', 'DEFI', 'TVL'],
         dataSource: 'fallback',
       },
     ];
