@@ -41,7 +41,7 @@ A personalized crypto investor dashboard that gets to know users through a short
 - **Crypto Data**: CoinGecko API
 - **News**: CryptoPanic API
 - **AI**: OpenRouter
-- **Memes**: Static JSON (with Reddit fallback)
+- **Memes**: Reddit API (OAuth) with curated static fallback
 
 ## 📁 Project Structure
 
@@ -208,44 +208,30 @@ npx prisma db push
 
 ## 🚀 Deployment
 
-### Frontend (Vercel)
-1. Connect your GitHub repository to Vercel
-2. Set environment variables in Vercel dashboard
-3. Deploy automatically on push to main branch
 
 ### Backend (Railway)
 1. Connect your GitHub repository to Railway
-2. Set environment variables in Railway dashboard
-3. Deploy automatically on push to main branch
+2. Configure settings: 
+- Root Directory: root
+- Build Command: npm run build:backend
+- Start Command: cd backend && npm run start
+- Providers: Node
+3. Set environment variables in Railway dashboard (set CORS_ORGIN temporarily to http://localhost:3000)
+4. Deploy automatically on push to main branch
+5. After Frontend is set up, change CORS_ORGIN to frontend url
 
-## 📡 API Reference
+### Frontend (Vercel)
+1. Connect your GitHub repository to Vercel
+2. Configure settings: 
+- Root Directory: frontend
+- Install Command: npm install
+- Build Command: npm run build
+- Output Directory: .next
+- Development Command: npm run dev
+- Node.js: 20.x
+3. Set environment variables in Vercel dashboard (with backend url from Railway)
+4. Deploy automatically on push to main branch
 
-Base URL: `http://localhost:5001`
-
-### Auth
-- `POST /api/auth/register` — Register user
-- `POST /api/auth/login` — Login and receive JWT
-- `GET /api/auth/me` — Get current user (requires Bearer token)
-- `POST /api/auth/logout` — Logout
-
-Auth header for protected routes:
-```http
-Authorization: Bearer <token>
-```
-
-### Onboarding
-- `POST /api/onboarding/preferences` — Save preferences (auth)
-- `GET /api/onboarding/preferences` — Get preferences (auth)
-- `GET /api/onboarding/status` — Check onboarding status (auth)
-
-### Dashboard
-- `GET /api/dashboard` — Aggregated data (auth)
-- `POST /api/dashboard/feedback` — Submit feedback (auth)
-- `GET /api/dashboard/chart-data/:coinId?days=7` — Historical chart data (auth)
-- `GET /api/dashboard/meme?category=...&tags=tag1,tag2` — Meme (auth)
-- `GET /api/dashboard/reddit-status` — Reddit API status (auth)
-- `GET /api/dashboard/ai-insight` — AI insight only (auth)
-- `GET /api/dashboard/openrouter-status` — OpenRouter status (auth)
 
 ### Health
 - `GET /health` — Service health, uptime, timestamp
@@ -255,21 +241,11 @@ Authorization: Bearer <token>
 - **Rate limiting**: `RATE_LIMIT_MAX_REQUESTS` per `RATE_LIMIT_WINDOW_MS` (defaults: 100 per 15m)
 - **Auth**: JWT in `Authorization` header; tokens verified on each request
 
-## 🤝 Contributing
+## 🖼️ Reddit Meme Scraping
+- The app fetches crypto memes from Reddit using OAuth via the following subreddits: `r/cryptocurrencymemes`, `r/bitcoinmemes`, `r/cryptomemes`.
+- Configure credentials in backend `.env`: `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT`.
+- If Reddit credentials are missing or Reddit calls fail, the service falls back to a curated static set of memes.
+- Filtering: image-only posts (jpg/png/gif/jpeg, `i.redd.it`, `imgur.com`, non-video, non-nsfw/default thumbnails).
+- Endpoints: `GET /api/dashboard/meme` returns either a Reddit meme (if available) or a curated meme; `GET /api/dashboard/reddit-status` reports configuration/auth status.
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
 
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [CoinGecko](https://coingecko.com/) for cryptocurrency data
-- [CryptoPanic](https://cryptopanic.com/) for crypto news
-- [OpenRouter](https://openrouter.ai/) for AI insights
-- [shadcn/ui](https://ui.shadcn.com/) for beautiful UI components
