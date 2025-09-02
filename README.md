@@ -15,7 +15,7 @@ A personalized crypto investor dashboard that gets to know users through a short
 ## 🛠 Tech Stack
 
 ### Frontend
-- **Framework**: Next.js 14 (App Router)
+- **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS + shadcn/ui
 - **State Management**: Zustand (UI state) + TanStack Query (server state)
@@ -27,8 +27,9 @@ A personalized crypto investor dashboard that gets to know users through a short
 - **Framework**: Express.js
 - **Language**: TypeScript
 - **Database**: PostgreSQL + Prisma ORM
-- **Authentication**: JWT with httpOnly cookies
-- **Real-time**: Server-Sent Events (SSE)
+- **Authentication**: JWT Bearer tokens (Authorization header)
+- **Security**: Helmet, CORS, rate limiting (100 req/15m default)
+- **Logging**: Pino
 - **Deployment**: Railway
 
 ### Shared
@@ -39,14 +40,14 @@ A personalized crypto investor dashboard that gets to know users through a short
 ### External APIs
 - **Crypto Data**: CoinGecko API
 - **News**: CryptoPanic API
-- **AI**: OpenRouter or Hugging Face Inference API
+- **AI**: OpenRouter
 - **Memes**: Static JSON (with Reddit fallback)
 
 ## 📁 Project Structure
 
 ```
 Crypto-Dashboard/
-├── frontend/          # Next.js 14 application
+├── frontend/          # Next.js 15 application
 ├── backend/           # Express.js API server
 ├── shared/            # Shared types, schemas, and constants
 ├── package.json       # Root package.json for monorepo scripts
@@ -75,9 +76,13 @@ Crypto-Dashboard/
 
 3. **Set up environment variables**
    ```bash
-   # Copy example environment files
-   cp backend/.env.example backend/.env
-   cp frontend/.env.example frontend/.env.local
+   # Backend
+   cp backend/env.example backend/.env
+
+   # Frontend (create file)
+   cat > frontend/.env.local << 'EOF'
+   NEXT_PUBLIC_API_URL="http://localhost:5001"
+   EOF
    ```
 
 4. **Configure database**
@@ -93,7 +98,7 @@ Crypto-Dashboard/
    npm run dev
    ```
 
-   This will start both frontend (http://localhost:3000) and backend (http://localhost:5000)
+   This will start both frontend (http://localhost:3000) and backend (http://localhost:5001)
 
 ## 🔧 Development
 
@@ -117,6 +122,12 @@ Crypto-Dashboard/
 - `npm run build:backend` - Build Express application
 - `npm run lint:backend` - Run ESLint
 - `npm run type-check:backend` - Run TypeScript type checking
+  - Database utilities:
+    - `npm run db:generate` - Generate Prisma client
+    - `npm run db:push` - Push schema to database
+    - `npm run db:migrate` - Create/apply migrations (dev)
+    - `npm run db:studio` - Open Prisma Studio
+    - `npm run db:seed` - Seed database
 
 ### Environment Variables
 
@@ -126,52 +137,74 @@ Crypto-Dashboard/
 DATABASE_URL="postgresql://username:password@localhost:5432/crypto_dashboard"
 
 # JWT
-JWT_SECRET="your-super-secret-jwt-key"
+JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
+JWT_EXPIRES_IN="7d"
 
 # External APIs
+COINGECKO_API_URL="https://api.coingecko.com/api/v3"
 COINGECKO_API_KEY="your-coingecko-api-key"
+CRYPTOPANIC_API_URL="https://cryptopanic.com/api/developer/v2/posts/"
 CRYPTOPANIC_API_KEY="your-cryptopanic-api-key"
 OPENROUTER_API_KEY="your-openrouter-api-key"
 
+# Reddit API
+REDDIT_CLIENT_ID="your-reddit-client-id"
+REDDIT_CLIENT_SECRET="your-reddit-client-secret"
+REDDIT_USER_AGENT="web:crypto-dashboard:v1.0.0 (by /u/your-reddit-username)"
+
 # Server
-PORT=5000
+PORT=5001
 NODE_ENV=development
+CORS_ORIGIN="http://localhost:3000"
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+
+# Logging
+LOG_LEVEL="info"
 ```
 
 #### Frontend (.env.local)
 ```env
-# API
-NEXT_PUBLIC_API_URL="http://localhost:5000"
-
-# External APIs (if needed on frontend)
-NEXT_PUBLIC_COINGECKO_API_KEY="your-coingecko-api-key"
+# API base URL
+NEXT_PUBLIC_API_URL="http://localhost:5001"
 ```
 
-## 📊 Database Schema
+## 📊 Database Schema (Prisma)
 
-### Users
-- `id` (UUID, Primary Key)
+### User (`users`)
+- `id` (String, cuid, PK)
 - `email` (String, Unique)
 - `name` (String)
-- `password_hash` (String)
-- `created_at` (DateTime)
-- `updated_at` (DateTime)
+- `passwordHash` (String)
+- `createdAt` (DateTime)
+- `updatedAt` (DateTime)
 
-### User Preferences
-- `user_id` (UUID, Foreign Key)
-- `crypto_interests` (String Array)
-- `investor_type` (Enum)
-- `content_preferences` (String Array)
-- `created_at` (DateTime)
-- `updated_at` (DateTime)
+### UserPreferences (`user_preferences`)
+- `id` (String, cuid, PK)
+- `userId` (String, Unique, FK -> `User.id`)
+- `cryptoInterests` (String[])
+- `investorType` (String; one of: HODLER, DAY_TRADER, NFT_COLLECTOR, DEFI_USER, NEWBIE)
+- `contentPreferences` (String[])
+- `createdAt` (DateTime)
+- `updatedAt` (DateTime)
 
-### Feedback
-- `id` (UUID, Primary Key)
-- `user_id` (UUID, Foreign Key)
-- `content_type` (Enum)
-- `content_id` (String)
-- `rating` (Enum: THUMBS_UP/THUMBS_DOWN)
-- `created_at` (DateTime)
+### Feedback (`feedback`)
+- `id` (String, cuid, PK)
+- `userId` (String, FK -> `User.id`)
+- `contentType` (String; one of: NEWS, CHART, AI_INSIGHT, MEME)
+- `contentId` (String)
+- `rating` (String; one of: THUMBS_UP, THUMBS_DOWN)
+- `createdAt` (DateTime)
+
+Relations: `User` 1—1 `UserPreferences`, `User` 1—N `Feedback`.
+
+Run in `backend/`:
+```bash
+npx prisma generate
+npx prisma db push
+```
 
 ## 🚀 Deployment
 
@@ -184,6 +217,43 @@ NEXT_PUBLIC_COINGECKO_API_KEY="your-coingecko-api-key"
 1. Connect your GitHub repository to Railway
 2. Set environment variables in Railway dashboard
 3. Deploy automatically on push to main branch
+
+## 📡 API Reference
+
+Base URL: `http://localhost:5001`
+
+### Auth
+- `POST /api/auth/register` — Register user
+- `POST /api/auth/login` — Login and receive JWT
+- `GET /api/auth/me` — Get current user (requires Bearer token)
+- `POST /api/auth/logout` — Logout
+
+Auth header for protected routes:
+```http
+Authorization: Bearer <token>
+```
+
+### Onboarding
+- `POST /api/onboarding/preferences` — Save preferences (auth)
+- `GET /api/onboarding/preferences` — Get preferences (auth)
+- `GET /api/onboarding/status` — Check onboarding status (auth)
+
+### Dashboard
+- `GET /api/dashboard` — Aggregated data (auth)
+- `POST /api/dashboard/feedback` — Submit feedback (auth)
+- `GET /api/dashboard/chart-data/:coinId?days=7` — Historical chart data (auth)
+- `GET /api/dashboard/meme?category=...&tags=tag1,tag2` — Meme (auth)
+- `GET /api/dashboard/reddit-status` — Reddit API status (auth)
+- `GET /api/dashboard/ai-insight` — AI insight only (auth)
+- `GET /api/dashboard/openrouter-status` — OpenRouter status (auth)
+
+### Health
+- `GET /health` — Service health, uptime, timestamp
+
+## 🔒 Security & Limits
+- **CORS**: Allowed origin via `CORS_ORIGIN` (default `http://localhost:3000`)
+- **Rate limiting**: `RATE_LIMIT_MAX_REQUESTS` per `RATE_LIMIT_WINDOW_MS` (defaults: 100 per 15m)
+- **Auth**: JWT in `Authorization` header; tokens verified on each request
 
 ## 🤝 Contributing
 
