@@ -216,9 +216,9 @@ npx prisma db push
 - Build Command: npm run build:backend
 - Start Command: cd backend && npm run start
 - Providers: Node
-3. Set environment variables in Railway dashboard (set CORS_ORGIN temporarily to http://localhost:3000)
+3. Set environment variables in Railway dashboard (set CORS_ORIGIN temporarily to http://localhost:3000)
 4. Deploy automatically on push to main branch
-5. After Frontend is set up, change CORS_ORGIN to frontend url
+5. After Frontend is set up, change CORS_ORIGIN to frontend url
 
 ### Frontend (Vercel)
 1. Connect your GitHub repository to Vercel
