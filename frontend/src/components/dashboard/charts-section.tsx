@@ -242,7 +242,7 @@ export function ChartsSection({ coins = [] }: ChartsSectionProps) {
                       selectedCoinData.price_change_percentage_24h >= 0 ? 'text-green-600' : 'text-red-600'
                     }`}>
                       {selectedCoinData.price_change_percentage_24h >= 0 ? '+' : ''}
-                      {selectedCoinData.price_change_percentage_24h.toFixed(2)}%
+                      {selectedCoinData.price_change_percentage_24h != null ? selectedCoinData.price_change_percentage_24h.toFixed(2) : 'N/A'}%
                     </span>
                   </p>
                 </div>

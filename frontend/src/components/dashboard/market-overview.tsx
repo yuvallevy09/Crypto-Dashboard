@@ -24,7 +24,10 @@ export function MarketOverview({ data }: MarketOverviewProps) {
     }).format(value);
   };
 
-  const formatPercentage = (value: number) => {
+  const formatPercentage = (value: number | null | undefined) => {
+    if (value == null || Number.isNaN(value)) {
+      return 'N/A';
+    }
     return `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
   };
 

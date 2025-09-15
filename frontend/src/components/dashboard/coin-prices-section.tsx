@@ -25,7 +25,10 @@ export function CoinPricesSection({ coins }: CoinPricesSectionProps) {
     return formatCurrency(value);
   };
 
-  const formatPercentage = (value: number) => {
+  const formatPercentage = (value: number | null | undefined) => {
+    if (value == null || Number.isNaN(value)) {
+      return 'N/A';
+    }
     return `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
   };
 
@@ -79,7 +82,7 @@ export function CoinPricesSection({ coins }: CoinPricesSectionProps) {
                     {formatPercentage(coin.price_change_percentage_1h_in_currency || 0)}
                   </td>
                   <td className={`py-3 px-2 text-right text-sm ${
-                    coin.price_change_percentage_24h >= 0 ? 'text-green-600' : 'text-red-600'
+                    (coin.price_change_percentage_24h ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'
                   }`}>
                     {formatPercentage(coin.price_change_percentage_24h)}
                   </td>

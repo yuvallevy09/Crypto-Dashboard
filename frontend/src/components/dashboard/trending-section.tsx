@@ -21,7 +21,10 @@ export function TrendingSection({ coins, title = "Trending", icon = "🔥" }: Tr
     }).format(value);
   };
 
-  const formatPercentage = (value: number) => {
+  const formatPercentage = (value: number | null | undefined) => {
+    if (value == null || Number.isNaN(value)) {
+      return 'N/A';
+    }
     return `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
   };
 
