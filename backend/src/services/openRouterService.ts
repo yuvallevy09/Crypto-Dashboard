@@ -194,43 +194,54 @@ export class OpenRouterService {
         }
       }
 
-      const requestData = {
-        model: 'google/gemini-2.5-flash-image-preview:free', // Using free model
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a knowledgeable cryptocurrency market analyst. Provide concise, accurate, and helpful insights about the crypto market. Focus on current trends and practical advice.'
-          },
-          {
-            role: 'user',
-            content: prompt
+      // Try a sequence of known free models; stop at first success
+      const freeModelCandidates = [
+        'mistralai/mistral-7b-instruct:free',
+        'google/gemini-2.0-flash-exp:free',
+        'qwen/qwen2.5-7b-instruct:free',
+        'google/gemma-7b-it:free',
+        'meta-llama/llama-3.3-8b-instruct:free'
+      ];
+
+      for (const modelName of freeModelCandidates) {
+        try {
+          const requestData = {
+            model: modelName,
+            messages: [
+              {
+                role: 'system',
+                content: 'You are a knowledgeable cryptocurrency market analyst. Provide concise, accurate, and helpful insights about the crypto market. Focus on current trends and practical advice.'
+              },
+              {
+                role: 'user',
+                content: prompt
+              }
+            ],
+            max_tokens: 150,
+            temperature: 0.7,
+          };
+
+          const response = await this.makeRequest('/chat/completions', requestData, cacheKey, 3600000);
+          const content = response.choices?.[0]?.message?.content;
+          if (content) {
+            const insight: AIInsight = {
+              id: `insight_${Date.now()}`,
+              content: content.trim(),
+              type: 'MARKET_ANALYSIS',
+              confidence: 0.85,
+              createdAt: new Date(),
+            };
+            this.cache.set(cacheKey, insight, 3600000);
+            logger.info(`AI insight generated successfully via model: ${modelName}`);
+            return insight;
           }
-        ],
-        max_tokens: 150, // Limit response length
-        temperature: 0.7, // Balanced creativity
-      };
-
-      const response = await this.makeRequest('/chat/completions', requestData, cacheKey, 3600000); // Cache for 1 hour
-
-      const content = response.choices?.[0]?.message?.content;
-      
-      if (!content) {
-        throw new Error('No content generated from AI model');
+        } catch (err) {
+          logger.warn(`AI model failed, trying next candidate`, { modelName });
+          continue;
+        }
       }
 
-      const insight: AIInsight = {
-        id: `insight_${Date.now()}`,
-        content: content.trim(),
-        type: 'MARKET_ANALYSIS',
-        confidence: 0.85,
-        createdAt: new Date(),
-      };
-
-      // Cache the insight
-      this.cache.set(cacheKey, insight, 3600000); // Cache for 1 hour
-
-      logger.info('AI insight generated successfully');
-      return insight;
+      throw new Error('All free OpenRouter model candidates failed');
     } catch (error: any) {
       logger.error('Failed to generate AI insight:', error);
       
